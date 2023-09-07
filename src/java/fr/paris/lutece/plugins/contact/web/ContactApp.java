@@ -63,6 +63,7 @@ import fr.paris.lutece.util.html.HtmlTemplate;
 import fr.paris.lutece.util.string.StringUtil;
 import fr.paris.lutece.util.url.UrlItem;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -417,14 +418,14 @@ public class ContactApp extends MVCApplication
     public XPage doSendMessage( HttpServletRequest request ) throws SiteMessageException
     {
         String strIdContactList = request.getParameter( PARAMETER_ID_CONTACT_LIST );
-        String strVisitorLastName = ( request.getParameter( PARAMETER_VISITOR_LASTNAME ) == null ) ? "" : request.getParameter( PARAMETER_VISITOR_LASTNAME );
-        String strVisitorFirstName = ( request.getParameter( PARAMETER_VISITOR_FIRSTNAME ) == null ) ? "" : request.getParameter( PARAMETER_VISITOR_FIRSTNAME );
-        String strVisitorAddress = ( request.getParameter( PARAMETER_VISITOR_ADDRESS ) == null ) ? "" : request.getParameter( PARAMETER_VISITOR_ADDRESS );
-        String strVisitorEmail = ( request.getParameter( PARAMETER_VISITOR_EMAIL ) == null ) ? "" : request.getParameter( PARAMETER_VISITOR_EMAIL );
-        String strObject = ( request.getParameter( PARAMETER_MESSAGE_OBJECT ) == null ) ? "" : request.getParameter( PARAMETER_MESSAGE_OBJECT );
-        String strMessage = ( request.getParameter( PARAMETER_MESSAGE ) == null ) ? "" : request.getParameter( PARAMETER_MESSAGE );
+        String strVisitorLastName = ( request.getParameter( PARAMETER_VISITOR_LASTNAME ) == null ) ? "" : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_LASTNAME ));
+        String strVisitorFirstName = ( request.getParameter( PARAMETER_VISITOR_FIRSTNAME ) == null ) ? "" : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_FIRSTNAME ));
+        String strVisitorAddress = ( request.getParameter( PARAMETER_VISITOR_ADDRESS ) == null ) ? "" : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_ADDRESS ));
+        String strVisitorEmail = ( request.getParameter( PARAMETER_VISITOR_EMAIL ) == null ) ? "" : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_EMAIL ));
+        String strObject = ( request.getParameter( PARAMETER_MESSAGE_OBJECT ) == null ) ? "" : this.encodingWithUTF16(request.getParameter( PARAMETER_MESSAGE_OBJECT ));
+        String strMessage = ( request.getParameter( PARAMETER_MESSAGE ) == null ) ? "" : this.encodingWithUTF16(request.getParameter( PARAMETER_MESSAGE ));
         String strDateOfDay = DateUtil.getCurrentDateString( request.getLocale( ) );
-        String strContact = request.getParameter( PARAMETER_CONTACT );
+        String strContact = this.encodingWithUTF16(request.getParameter( PARAMETER_CONTACT ));
         int nContact = ( strContact == null ) ? 0 : Integer.parseInt( strContact );
         int nIdContactList = Integer.parseInt( strIdContactList );
         boolean bTosAccepted = request.getParameter( PARAMETER_TOS_ACCEPTED ) != null;
@@ -529,5 +530,16 @@ public class ContactApp extends MVCApplication
         mapParamSuccess.put( PARAMETER_SEND, "done" );
 
         return redirect( request, VIEW_CONTACT_PAGE, mapParamSuccess );
+    }
+
+    /**
+     * This method allows to encode a String to UTF-8 in Java.
+     *
+     * @return The string encode.
+     * @param rawString The raw string
+     */
+    private String encodingWithUTF16(String rawString){
+        byte[] bytes = rawString.getBytes(StandardCharsets.UTF_16);
+        return new String(bytes, StandardCharsets.UTF_16);
     }
 }
