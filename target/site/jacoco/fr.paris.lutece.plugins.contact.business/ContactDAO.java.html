@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContactDAO.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lutece contact plugin</a> &gt; <a href="index.source.html" class="el_package">fr.paris.lutece.plugins.contact.business</a> &gt; <span class="el_source">ContactDAO.java</span></div><h1>ContactDAO.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2002-2021, City of Paris
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice
+ *     and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright notice
+ *     and the following disclaimer in the documentation and/or other materials
+ *     provided with the distribution.
+ *
+ *  3. Neither the name of 'Mairie de Paris' nor 'Lutece' nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * License 1.0
+ */
+package fr.paris.lutece.plugins.contact.business;
+
+import fr.paris.lutece.portal.service.plugin.Plugin;
+import fr.paris.lutece.util.ReferenceList;
+import fr.paris.lutece.util.sql.DAOUtil;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+/**
+ * This class provides Data Access methods for Contact objects
+ */
+<span class="nc" id="L46">public final class ContactDAO implements IContactDAO</span>
+{
+    // Constants
+    private static final String SQL_QUERY_NEWPK = &quot;SELECT max( id_contact ) FROM contact &quot;;
+    private static final String SQL_QUERY_SELECT = &quot;SELECT id_contact, description, email, workgroup_key FROM contact WHERE id_contact = ? &quot;;
+    private static final String SQL_QUERY_SELECTALL = &quot;SELECT id_contact, description, email, workgroup_key, hits FROM contact ORDER BY id_contact DESC&quot;;
+    private static final String SQL_QUERY_INSERT = &quot;INSERT INTO contact ( id_contact , description, email, workgroup_key, hits )  VALUES ( ? , ? , ?, ?, 0 ) &quot;;
+    private static final String SQL_QUERY_DELETE = &quot;DELETE FROM contact WHERE id_contact = ? &quot;;
+    private static final String SQL_QUERY_UPDATE = &quot;UPDATE contact SET description = ? , email = ?, workgroup_key = ?  WHERE id_contact = ?  &quot;;
+    private static final String SQL_QUERY_SELECTALL_BY_LIST = &quot;SELECT a.id_contact, b.description, b.email, a.contact_order FROM contact_list_contact a, contact b WHERE id_contact_list = ? AND b.id_contact=a.id_contact ORDER BY a.contact_order&quot;;
+    private static final String SQL_QUERY_SELECT_CONTACT_HITS = &quot;SELECT hits FROM contact WHERE id_contact = ?&quot;;
+    private static final String SQL_QUERY_SELECT_CONTACT_IN_LIST_HITS = &quot;SELECT hits FROM contact_list_contact WHERE id_contact = ? AND id_contact_list = ?&quot;;
+    private static final String SQL_QUERY_UPDATE_CONTACT_HITS = &quot;UPDATE contact SET hits = ? WHERE id_contact = ?&quot;;
+    private static final String SQL_QUERY_UPDATE_CONTACT_IN_LIST_HITS = &quot;UPDATE contact_list_contact SET hits = ? WHERE id_contact = ? AND id_contact_list = ?&quot;;
+
+    // CONTACT ORDER
+    private static final String SQL_QUERY_SELECT_CONTACT_ID_BY_ORDER = &quot;SELECT id_contact FROM contact_list_contact WHERE contact_order = ? AND id_contact_list = ?&quot;;
+    private static final String SQL_QUERY_SELECT_CONTACT_ORDER_BY_ID = &quot;SELECT contact_order FROM contact_list_contact WHERE id_contact = ? AND id_contact_list = ?&quot;;
+    private static final String SQL_QUERY_UPDATE_CONTACT_ORDER = &quot;UPDATE contact_list_contact SET contact_order = ?  WHERE id_contact = ? AND id_contact_list = ?&quot;;
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // Access methods to data
+
+    /**
+     * Generates a new primary key
+     * 
+     * @param plugin
+     *            The plugin
+     * @return The new primary key
+     */
+    private int newPrimaryKey( Plugin plugin )
+    {
+<span class="nc" id="L78">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_NEWPK, plugin );</span>
+<span class="nc" id="L79">        daoUtil.executeQuery( );</span>
+
+        int nKey;
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if ( !daoUtil.next( ) )</span>
+        {
+            // if the table is empty
+<span class="nc" id="L86">            nKey = 1;</span>
+        }
+
+<span class="nc" id="L89">        nKey = daoUtil.getInt( 1 ) + 1;</span>
+
+<span class="nc" id="L91">        daoUtil.free( );</span>
+
+<span class="nc" id="L93">        return nKey;</span>
+    }
+
+    ////////////////////////////////////////////////////////////////////////
+    // Methods using a dynamic pool
+
+    /**
+     * Insert a new record in the table.
+     * 
+     * @param contact
+     *            The contact object
+     * @param plugin
+     *            The plugin
+     */
+    public void insert( Contact contact, Plugin plugin )
+    {
+<span class="nc" id="L109">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_INSERT, plugin );</span>
+<span class="nc" id="L110">        contact.setId( newPrimaryKey( plugin ) );</span>
+<span class="nc" id="L111">        daoUtil.setInt( 1, contact.getId( ) );</span>
+<span class="nc" id="L112">        daoUtil.setString( 2, contact.getName( ) );</span>
+<span class="nc" id="L113">        daoUtil.setString( 3, contact.getEmail( ) );</span>
+<span class="nc" id="L114">        daoUtil.setString( 4, contact.getWorkgroup( ) );</span>
+
+<span class="nc" id="L116">        daoUtil.executeUpdate( );</span>
+<span class="nc" id="L117">        daoUtil.free( );</span>
+<span class="nc" id="L118">    }</span>
+
+    /**
+     * Load the data of Contact from the table
+     * 
+     * @param nContactId
+     *            The identifier of Contact
+     * @param plugin
+     *            The plugin
+     * @return the instance of the Contact
+     */
+    public Contact load( int nContactId, Plugin plugin )
+    {
+<span class="nc" id="L131">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT, plugin );</span>
+<span class="nc" id="L132">        daoUtil.setInt( 1, nContactId );</span>
+<span class="nc" id="L133">        daoUtil.executeQuery( );</span>
+
+<span class="nc" id="L135">        Contact contact = null;</span>
+
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if ( daoUtil.next( ) )</span>
+        {
+<span class="nc" id="L139">            contact = new Contact( );</span>
+<span class="nc" id="L140">            contact.setId( daoUtil.getInt( 1 ) );</span>
+<span class="nc" id="L141">            contact.setName( daoUtil.getString( 2 ) );</span>
+<span class="nc" id="L142">            contact.setEmail( daoUtil.getString( 3 ) );</span>
+<span class="nc" id="L143">            contact.setWorkgroup( daoUtil.getString( 4 ) );</span>
+        }
+
+<span class="nc" id="L146">        daoUtil.free( );</span>
+
+<span class="nc" id="L148">        return contact;</span>
+    }
+
+    /**
+     * Delete a record from the table
+     * 
+     * @param contact
+     *            The Contact object
+     * @param plugin
+     *            The plugin
+     */
+    public void delete( Contact contact, Plugin plugin )
+    {
+<span class="nc" id="L161">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_DELETE, plugin );</span>
+<span class="nc" id="L162">        daoUtil.setInt( 1, contact.getId( ) );</span>
+<span class="nc" id="L163">        daoUtil.executeUpdate( );</span>
+<span class="nc" id="L164">        daoUtil.free( );</span>
+<span class="nc" id="L165">    }</span>
+
+    /**
+     * Update the record in the table
+     * 
+     * @param contact
+     *            The reference of contact
+     * @param plugin
+     *            The plugin
+     */
+    public void store( Contact contact, Plugin plugin )
+    {
+<span class="nc" id="L177">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPDATE, plugin );</span>
+<span class="nc" id="L178">        int nContactId = contact.getId( );</span>
+
+<span class="nc" id="L180">        daoUtil.setString( 1, contact.getName( ) );</span>
+<span class="nc" id="L181">        daoUtil.setString( 2, contact.getEmail( ) );</span>
+<span class="nc" id="L182">        daoUtil.setString( 3, contact.getWorkgroup( ) );</span>
+<span class="nc" id="L183">        daoUtil.setInt( 4, nContactId );</span>
+
+<span class="nc" id="L185">        daoUtil.executeUpdate( );</span>
+<span class="nc" id="L186">        daoUtil.free( );</span>
+<span class="nc" id="L187">    }</span>
+
+    /**
+     * Load the list of contacts
+     * 
+     * @return The Collection of the Contacts with the string at the top
+     * @param nIdContactList
+     *            The id of contact List
+     * @param strComboItem
+     *            the string to display at the top of the list
+     * @param plugin
+     *            The plugin
+     */
+    public ReferenceList selectContactsByListWithString( int nIdContactList, String strComboItem, Plugin plugin )
+    {
+<span class="nc" id="L202">        ReferenceList contactList = new ReferenceList( );</span>
+<span class="nc" id="L203">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECTALL_BY_LIST, plugin );</span>
+<span class="nc" id="L204">        daoUtil.setInt( 1, nIdContactList );</span>
+<span class="nc" id="L205">        daoUtil.executeQuery( );</span>
+<span class="nc" id="L206">        contactList.addItem( 0, strComboItem );</span>
+
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        while ( daoUtil.next( ) )</span>
+        {
+<span class="nc" id="L210">            contactList.addItem( daoUtil.getInt( 1 ), daoUtil.getString( 2 ) );</span>
+        }
+
+<span class="nc" id="L213">        daoUtil.free( );</span>
+
+<span class="nc" id="L215">        return contactList;</span>
+    }
+
+    /**
+     * Load the list of contacts
+     * 
+     * @param plugin
+     *            The plugin
+     * @return The Collection of the Contacts
+     */
+    public Collection&lt;Contact&gt; selectAll( Plugin plugin )
+    {
+<span class="nc" id="L227">        Collection&lt;Contact&gt; contactList = new ArrayList&lt;Contact&gt;( );</span>
+<span class="nc" id="L228">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECTALL, plugin );</span>
+<span class="nc" id="L229">        daoUtil.executeQuery( );</span>
+
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        while ( daoUtil.next( ) )</span>
+        {
+<span class="nc" id="L233">            Contact contact = new Contact( );</span>
+<span class="nc" id="L234">            contact.setId( daoUtil.getInt( 1 ) );</span>
+<span class="nc" id="L235">            contact.setName( daoUtil.getString( 2 ) );</span>
+<span class="nc" id="L236">            contact.setEmail( daoUtil.getString( 3 ) );</span>
+<span class="nc" id="L237">            contact.setWorkgroup( daoUtil.getString( 4 ) );</span>
+<span class="nc" id="L238">            contact.setHits( daoUtil.getInt( 5 ) );</span>
+<span class="nc" id="L239">            contactList.add( contact );</span>
+<span class="nc" id="L240">        }</span>
+
+<span class="nc" id="L242">        daoUtil.free( );</span>
+
+<span class="nc" id="L244">        return contactList;</span>
+    }
+
+    /**
+     * Update hits of the contact in contact and contact_list_contact tables
+     * 
+     * @param nIdContact
+     *            id of the contact
+     * @param nIdContactList
+     *            id of contact list
+     * @param plugin
+     *            the plugin Contact
+     */
+    public void updateHits( int nIdContact, int nIdContactList, Plugin plugin )
+    {
+        int nNewContactInListHits;
+        int nNewContactHits;
+
+<span class="nc" id="L262">        nNewContactHits = checkContactHits( nIdContact, plugin ) + 1;</span>
+<span class="nc" id="L263">        nNewContactInListHits = checkContactInListHits( nIdContact, nIdContactList, plugin ) + 1;</span>
+
+<span class="nc" id="L265">        updateContactHits( nIdContact, nNewContactHits, plugin );</span>
+<span class="nc" id="L266">        updateContactInListHits( nIdContact, nIdContactList, nNewContactInListHits, plugin );</span>
+<span class="nc" id="L267">    }</span>
+
+    /**
+     * Returns the number of hits of a contact
+     * 
+     * @param nIdContact
+     *            id of the contact
+     * @param plugin
+     *            the plugin Contact
+     * @return the number of hits
+     */
+    private int checkContactHits( int nIdContact, Plugin plugin )
+    {
+<span class="nc" id="L280">        int nHits = 0;</span>
+
+<span class="nc" id="L282">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_CONTACT_HITS, plugin );</span>
+<span class="nc" id="L283">        daoUtil.setInt( 1, nIdContact );</span>
+<span class="nc" id="L284">        daoUtil.executeQuery( );</span>
+
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if ( daoUtil.next( ) )</span>
+        {
+<span class="nc" id="L288">            nHits = daoUtil.getInt( 1 );</span>
+        }
+
+<span class="nc" id="L291">        daoUtil.free( );</span>
+
+<span class="nc" id="L293">        return nHits;</span>
+    }
+
+    /**
+     * updates the number of hits of a contact
+     * 
+     * @param nIdContact
+     *            id of the contact
+     * @param nNewContactHits
+     *            new number of hits
+     * @param plugin
+     *            the plugin Contact
+     */
+    private void updateContactHits( int nIdContact, int nNewContactHits, Plugin plugin )
+    {
+<span class="nc" id="L308">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPDATE_CONTACT_HITS, plugin );</span>
+<span class="nc" id="L309">        daoUtil.setInt( 1, nNewContactHits );</span>
+<span class="nc" id="L310">        daoUtil.setInt( 2, nIdContact );</span>
+<span class="nc" id="L311">        daoUtil.executeUpdate( );</span>
+<span class="nc" id="L312">        daoUtil.free( );</span>
+<span class="nc" id="L313">    }</span>
+
+    /**
+     * Returns the number of hits of a contact in a specified list
+     * 
+     * @param nIdContact
+     *            id of the contact
+     * @param nIdContactList
+     *            id of contact list
+     * @param plugin
+     *            the plugin Contact
+     * @return the number of hits
+     */
+    private int checkContactInListHits( int nIdContact, int nIdContactList, Plugin plugin )
+    {
+<span class="nc" id="L328">        int nHits = 0;</span>
+
+<span class="nc" id="L330">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_CONTACT_IN_LIST_HITS, plugin );</span>
+<span class="nc" id="L331">        daoUtil.setInt( 1, nIdContact );</span>
+<span class="nc" id="L332">        daoUtil.setInt( 2, nIdContactList );</span>
+<span class="nc" id="L333">        daoUtil.executeQuery( );</span>
+
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        if ( daoUtil.next( ) )</span>
+        {
+<span class="nc" id="L337">            nHits = daoUtil.getInt( 1 );</span>
+        }
+
+<span class="nc" id="L340">        daoUtil.free( );</span>
+
+<span class="nc" id="L342">        return nHits;</span>
+    }
+
+    /**
+     * updates the number of hits of a contact in a specified list
+     * 
+     * @param nIdContact
+     *            id of the contact
+     * @param nIdContactList
+     *            id of contact list
+     * @param nNewContactInListHits
+     *            the new number of hits
+     * @param plugin
+     *            the plugin Contact
+     */
+    private void updateContactInListHits( int nIdContact, int nIdContactList, int nNewContactInListHits, Plugin plugin )
+    {
+<span class="nc" id="L359">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPDATE_CONTACT_IN_LIST_HITS, plugin );</span>
+<span class="nc" id="L360">        daoUtil.setInt( 1, nNewContactInListHits );</span>
+<span class="nc" id="L361">        daoUtil.setInt( 2, nIdContact );</span>
+<span class="nc" id="L362">        daoUtil.setInt( 3, nIdContactList );</span>
+<span class="nc" id="L363">        daoUtil.executeUpdate( );</span>
+<span class="nc" id="L364">        daoUtil.free( );</span>
+<span class="nc" id="L365">    }</span>
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Contact Order management
+
+    /**
+     * Modify the order of a contact
+     * 
+     * @param nIdContactList
+     *            The id of contactList
+     * @param nNewOrder
+     *            The order number
+     * @param nId
+     *            The contact identifier
+     * @param plugin
+     *            The plugin
+     */
+    public void storeContactOrder( int nNewOrder, int nId, int nIdContactList, Plugin plugin )
+    {
+<span class="nc" id="L384">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_UPDATE_CONTACT_ORDER, plugin );</span>
+<span class="nc" id="L385">        daoUtil.setInt( 1, nNewOrder );</span>
+<span class="nc" id="L386">        daoUtil.setInt( 2, nId );</span>
+<span class="nc" id="L387">        daoUtil.setInt( 3, nIdContactList );</span>
+<span class="nc" id="L388">        daoUtil.executeUpdate( );</span>
+<span class="nc" id="L389">        daoUtil.free( );</span>
+<span class="nc" id="L390">    }</span>
+
+    /**
+     * Returns a contact identifier in a distinct order
+     * 
+     * @return The order of the Contact
+     * @param nIdContactList
+     *            the id of the contact List
+     * @param nContactOrder
+     *            The order number
+     * @param plugin
+     *            The plugin
+     */
+    public int selectContactIdByOrder( int nContactOrder, int nIdContactList, Plugin plugin )
+    {
+<span class="nc" id="L405">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_CONTACT_ID_BY_ORDER, plugin );</span>
+        int nResult;
+<span class="nc" id="L407">        daoUtil.setInt( 1, nContactOrder );</span>
+<span class="nc" id="L408">        daoUtil.setInt( 2, nIdContactList );</span>
+<span class="nc" id="L409">        daoUtil.executeQuery( );</span>
+
+<span class="nc bnc" id="L411" title="All 2 branches missed.">        if ( !daoUtil.next( ) )</span>
+        {
+            // If number order doesn't exist
+<span class="nc" id="L414">            nResult = 1;</span>
+        }
+        else
+        {
+<span class="nc" id="L418">            nResult = daoUtil.getInt( 1 );</span>
+        }
+
+<span class="nc" id="L421">        daoUtil.free( );</span>
+
+<span class="nc" id="L423">        return nResult;</span>
+    }
+
+    /**
+     * Returns the order of a contact in a list, using the Identifier
+     * 
+     * @param nIdContact
+     *            the id of contact
+     * @param nIdContactList
+     *            the id of contactList
+     * @param plugin
+     *            the plugin contact
+     * @return the order of the contact in the list
+     */
+    public int selectContactOrderById( int nIdContact, int nIdContactList, Plugin plugin )
+    {
+<span class="nc" id="L439">        DAOUtil daoUtil = new DAOUtil( SQL_QUERY_SELECT_CONTACT_ORDER_BY_ID, plugin );</span>
+        int nResult;
+<span class="nc" id="L441">        daoUtil.setInt( 1, nIdContact );</span>
+<span class="nc" id="L442">        daoUtil.setInt( 2, nIdContactList );</span>
+<span class="nc" id="L443">        daoUtil.executeQuery( );</span>
+
+<span class="nc bnc" id="L445" title="All 2 branches missed.">        if ( !daoUtil.next( ) )</span>
+        {
+            // If number order doesn't exist
+<span class="nc" id="L448">            nResult = 1;</span>
+        }
+        else
+        {
+<span class="nc" id="L452">            nResult = daoUtil.getInt( 1 );</span>
+        }
+
+<span class="nc" id="L455">        daoUtil.free( );</span>
+
+<span class="nc" id="L457">        return nResult;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

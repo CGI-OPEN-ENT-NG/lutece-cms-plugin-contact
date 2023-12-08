@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Contact.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lutece contact plugin</a> &gt; <a href="index.source.html" class="el_package">fr.paris.lutece.plugins.contact.business</a> &gt; <span class="el_source">Contact.java</span></div><h1>Contact.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2002-2021, City of Paris
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice
+ *     and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright notice
+ *     and the following disclaimer in the documentation and/or other materials
+ *     provided with the distribution.
+ *
+ *  3. Neither the name of 'Mairie de Paris' nor 'Lutece' nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * License 1.0
+ */
+package fr.paris.lutece.plugins.contact.business;
+
+import fr.paris.lutece.plugins.contact.service.ContactWorkgroupRemovalListener;
+import fr.paris.lutece.portal.service.workgroup.AdminWorkgroupResource;
+import fr.paris.lutece.portal.service.workgroup.AdminWorkgroupService;
+import fr.paris.lutece.portal.service.workgroup.WorkgroupRemovalListenerService;
+
+/**
+ * This class represents business object Contact
+ */
+<span class="nc" id="L44">public class Contact implements AdminWorkgroupResource</span>
+{
+    public static final String RESOURCE_TYPE = &quot;CONTACT&quot;;
+    private static final String EMPTY_STRING = &quot;&quot;;
+    private static ContactWorkgroupRemovalListener _listenerWorkgroup;
+
+    /////////////////////////////////////////////////////////////////////////////////
+    // Constants
+    private int _nId;
+    private int _nContactOrder;
+    private String _strName;
+    private String _strEmail;
+    private String _strAdminWorkgroup;
+    private int _nHits;
+
+    /**
+     * Initialize the ContactList
+     */
+    public static void init( )
+    {
+        // Create removal listeners and register them
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if ( _listenerWorkgroup == null )</span>
+        {
+<span class="nc" id="L67">            _listenerWorkgroup = new ContactWorkgroupRemovalListener( );</span>
+<span class="nc" id="L68">            WorkgroupRemovalListenerService.getService( ).registerListener( _listenerWorkgroup );</span>
+        }
+<span class="nc" id="L70">    }</span>
+
+    /**
+     * Returns the identifier of this contact.
+     *
+     * @return the contact identifier
+     */
+    public int getId( )
+    {
+<span class="nc" id="L79">        return _nId;</span>
+    }
+
+    /**
+     * Sets the identifier of the contact to the specified integer.
+     *
+     * @param nId
+     *            the new identifier
+     */
+    public void setId( int nId )
+    {
+<span class="nc" id="L90">        _nId = nId;</span>
+<span class="nc" id="L91">    }</span>
+
+    /**
+     * Returns the name of this contact.
+     *
+     * @return the contact name
+     */
+    public String getName( )
+    {
+<span class="nc" id="L100">        return _strName;</span>
+    }
+
+    /**
+     * Sets the name of the contact to the specified string.
+     *
+     * @param strName
+     *            the new name
+     */
+    public void setName( String strName )
+    {
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        _strName = ( strName == null ) ? EMPTY_STRING : strName;</span>
+<span class="nc" id="L112">    }</span>
+
+    /**
+     * Returns the email of this contact.
+     *
+     * @return the contact email
+     */
+    public String getEmail( )
+    {
+<span class="nc" id="L121">        return _strEmail;</span>
+    }
+
+    /**
+     * Sets the email of the contact to the specified string.
+     *
+     * @param strEmail
+     *            the new email
+     */
+    public void setEmail( String strEmail )
+    {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        _strEmail = ( strEmail == null ) ? EMPTY_STRING : strEmail;</span>
+<span class="nc" id="L133">    }</span>
+
+    /**
+     * Returns the contact order of this contact.
+     *
+     * @return the contact order
+     */
+    public int getContactOrder( )
+    {
+<span class="nc" id="L142">        return _nContactOrder;</span>
+    }
+
+    /**
+     * Sets the contact order of the contact to the specified integer.
+     *
+     * @param nContactOrder
+     *            the new contact order
+     */
+    public void setContactOrder( int nContactOrder )
+    {
+<span class="nc" id="L153">        _nContactOrder = nContactOrder;</span>
+<span class="nc" id="L154">    }</span>
+
+    /**
+     * Returns the workgroup
+     * 
+     * @return The workgroup
+     */
+    public String getWorkgroup( )
+    {
+<span class="nc" id="L163">        return _strAdminWorkgroup;</span>
+    }
+
+    /**
+     * Sets the workgroup
+     * 
+     * @param strAdminWorkgroup
+     *            The workgroup
+     */
+    public void setWorkgroup( String strAdminWorkgroup )
+    {
+<span class="nc" id="L174">        _strAdminWorkgroup = AdminWorkgroupService.normalizeWorkgroupKey( strAdminWorkgroup );</span>
+<span class="nc" id="L175">    }</span>
+
+    /**
+     * gets the number of messages send to the contact
+     * 
+     * @return number of hists
+     */
+    public int getHits( )
+    {
+<span class="nc" id="L184">        return _nHits;</span>
+    }
+
+    /**
+     * Sets the number of messages send to the contact
+     * 
+     * @param nHits
+     *            the number of hits
+     */
+    public void setHits( int nHits )
+    {
+<span class="nc" id="L195">        _nHits = nHits;</span>
+<span class="nc" id="L196">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

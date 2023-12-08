@@ -1,0 +1,7 @@
+fr/paris/lutece/plugins/contact/business/ContactBusinessTest.class
+fr/paris/lutece/plugins/contact/AllTests.class
+fr/paris/lutece/plugins/contact/web/AllTests.class
+fr/paris/lutece/plugins/contact/business/AllTests.class
+fr/paris/lutece/plugins/contact/web/ContactListJspBeanTest.class
+fr/paris/lutece/plugins/contact/web/ContactJspBeanTest.class
+fr/paris/lutece/plugins/contact/business/ContactListBusinessTest.class

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContactList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lutece contact plugin</a> &gt; <a href="index.source.html" class="el_package">fr.paris.lutece.plugins.contact.business</a> &gt; <span class="el_source">ContactList.java</span></div><h1>ContactList.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2002-2021, City of Paris
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice
+ *     and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright notice
+ *     and the following disclaimer in the documentation and/or other materials
+ *     provided with the distribution.
+ *
+ *  3. Neither the name of 'Mairie de Paris' nor 'Lutece' nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * License 1.0
+ */
+package fr.paris.lutece.plugins.contact.business;
+
+import fr.paris.lutece.plugins.contact.service.ContactListWorkgroupRemovalListener;
+import fr.paris.lutece.portal.service.role.RoleRemovalListenerService;
+import fr.paris.lutece.portal.service.workgroup.AdminWorkgroupResource;
+import fr.paris.lutece.portal.service.workgroup.AdminWorkgroupService;
+import fr.paris.lutece.portal.service.workgroup.WorkgroupRemovalListenerService;
+
+/**
+ * This class represents business object Contact
+ */
+<span class="nc" id="L45">public class ContactList implements AdminWorkgroupResource</span>
+{
+    public static final String RESOURCE_TYPE = &quot;CONTACT_LIST&quot;;
+    public static final String ROLE_NONE = &quot;none&quot;;
+    private static ContactListWorkgroupRemovalListener _listenerWorkgroup;
+    private static ContactListRoleRemovalListener _listenerRole;
+    private static final String EMPTY_STRING = &quot;&quot;;
+
+    /////////////////////////////////////////////////////////////////////////////////
+    // Constants
+    private int _nId;
+    private String _strContactListLabel;
+    private String _strContactListDescription;
+    private int _nContactsNumber;
+    private String _strAdminWorkgroup;
+    private String _strRole;
+    private int _nContactListOrder;
+    private boolean _bActiveTos;
+    private String _strTosMessage;
+
+    /**
+     * Initialize the ContactList
+     */
+    public static void init( )
+    {
+        // Create removal listeners and register them
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if ( _listenerWorkgroup == null )</span>
+        {
+<span class="nc" id="L73">            _listenerWorkgroup = new ContactListWorkgroupRemovalListener( );</span>
+<span class="nc" id="L74">            WorkgroupRemovalListenerService.getService( ).registerListener( _listenerWorkgroup );</span>
+        }
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if ( _listenerRole == null )</span>
+        {
+<span class="nc" id="L79">            _listenerRole = new ContactListRoleRemovalListener( );</span>
+<span class="nc" id="L80">            RoleRemovalListenerService.getService( ).registerListener( _listenerRole );</span>
+        }
+<span class="nc" id="L82">    }</span>
+
+    /**
+     * Returns the identifier of this contactList.
+     * 
+     * @return the contact identifier
+     */
+    public int getId( )
+    {
+<span class="nc" id="L91">        return _nId;</span>
+    }
+
+    /**
+     * Sets the identifier of the contactList to the specified integer.
+     * 
+     * @param nId
+     *            the new identifier
+     */
+    public void setId( int nId )
+    {
+<span class="nc" id="L102">        _nId = nId;</span>
+<span class="nc" id="L103">    }</span>
+
+    /**
+     * Returns the label of this list.
+     * 
+     * @return the contact name
+     */
+    public String getLabel( )
+    {
+<span class="nc" id="L112">        return _strContactListLabel;</span>
+    }
+
+    /**
+     * Sets the label of the contact List to the specified string.
+     * 
+     * @param strContactListLabel
+     *            the new name
+     */
+    public void setLabel( String strContactListLabel )
+    {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        _strContactListLabel = ( strContactListLabel == null ) ? EMPTY_STRING : strContactListLabel;</span>
+<span class="nc" id="L124">    }</span>
+
+    /**
+     * Returns the description of this contact list.
+     * 
+     * @return the contact name
+     */
+    public String getDescription( )
+    {
+<span class="nc" id="L133">        return _strContactListDescription;</span>
+    }
+
+    /**
+     * Sets the name of the contact to the specified string.
+     * 
+     * @param strContactListDescription
+     *            the description of the contact list
+     */
+    public void setDescription( String strContactListDescription )
+    {
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        _strContactListDescription = ( strContactListDescription == null ) ? EMPTY_STRING : strContactListDescription;</span>
+<span class="nc" id="L145">    }</span>
+
+    /**
+     * gets the number of contacts assigned to list
+     * 
+     * @return returns the number of contacts assigned to this list
+     */
+    public int getContactsNumber( )
+    {
+<span class="nc" id="L154">        return _nContactsNumber;</span>
+    }
+
+    /**
+     * sets to the specified integer the number of contacts assigned to list
+     * 
+     * @param nContactsNumber
+     *            the number of contacts to set
+     */
+    public void setContactsNumber( int nContactsNumber )
+    {
+<span class="nc" id="L165">        _nContactsNumber = nContactsNumber;</span>
+<span class="nc" id="L166">    }</span>
+
+    /**
+     * Returns the workgroup
+     * 
+     * @return The workgroup
+     */
+    public String getWorkgroup( )
+    {
+<span class="nc" id="L175">        return _strAdminWorkgroup;</span>
+    }
+
+    /**
+     * Sets the workgroup
+     * 
+     * @param strAdminWorkgroup
+     *            The workgroup
+     */
+    public void setWorkgroup( String strAdminWorkgroup )
+    {
+<span class="nc" id="L186">        _strAdminWorkgroup = AdminWorkgroupService.normalizeWorkgroupKey( strAdminWorkgroup );</span>
+<span class="nc" id="L187">    }</span>
+
+    /**
+     * Sets the role
+     * 
+     * @param strRole
+     *            The role
+     */
+
+    /**
+     * Gets the contactList role
+     * 
+     * @return contactList's role as a String
+     * @since v1.1
+     */
+    public String getRole( )
+    {
+<span class="nc" id="L204">        return _strRole;</span>
+    }
+
+    /**
+     * allows the contact List to be saw by a role
+     * 
+     * @param strRole
+     *            The role that can see the contact list
+     */
+    public void setRole( String strRole )
+    {
+<span class="nc bnc" id="L215" title="All 4 branches missed.">        _strRole = ( ( strRole == null ) || ( strRole.equals( &quot;&quot; ) ) ) ? ROLE_NONE : strRole;</span>
+<span class="nc" id="L216">    }</span>
+
+    /**
+     * Returns the order
+     * 
+     * @return The order
+     */
+    public int getContactListOrder( )
+    {
+<span class="nc" id="L225">        return _nContactListOrder;</span>
+    }
+
+    /**
+     * Sets the workgroup
+     * 
+     * @param nContactListOrder
+     *            the contact list
+     */
+    public void setContactListOrder( int nContactListOrder )
+    {
+<span class="nc" id="L236">        _nContactListOrder = nContactListOrder;</span>
+<span class="nc" id="L237">    }</span>
+
+    public boolean getTos( )
+    {
+<span class="nc" id="L241">        return _bActiveTos;</span>
+    }
+
+    public void setTos( boolean bActiveTos )
+    {
+<span class="nc" id="L246">        _bActiveTos = bActiveTos;</span>
+<span class="nc" id="L247">    }</span>
+
+    public String getTosMessage( )
+    {
+<span class="nc" id="L251">        return _strTosMessage;</span>
+    }
+
+    public void setTosMessage( String strTosMessage )
+    {
+<span class="nc" id="L256">        _strTosMessage = strTosMessage;</span>
+<span class="nc" id="L257">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

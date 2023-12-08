@@ -1,0 +1,680 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContactListJspBean.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lutece contact plugin</a> &gt; <a href="index.source.html" class="el_package">fr.paris.lutece.plugins.contact.web</a> &gt; <span class="el_source">ContactListJspBean.java</span></div><h1>ContactListJspBean.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2002-2021, City of Paris
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice
+ *     and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright notice
+ *     and the following disclaimer in the documentation and/or other materials
+ *     provided with the distribution.
+ *
+ *  3. Neither the name of 'Mairie de Paris' nor 'Lutece' nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * License 1.0
+ */
+package fr.paris.lutece.plugins.contact.web;
+
+import fr.paris.lutece.plugins.contact.business.Contact;
+import fr.paris.lutece.plugins.contact.business.ContactHome;
+import fr.paris.lutece.plugins.contact.business.ContactList;
+import fr.paris.lutece.plugins.contact.business.ContactListHome;
+import fr.paris.lutece.portal.business.role.RoleHome;
+import fr.paris.lutece.portal.service.message.AdminMessage;
+import fr.paris.lutece.portal.service.message.AdminMessageService;
+import fr.paris.lutece.portal.service.template.AppTemplateService;
+import fr.paris.lutece.portal.service.util.AppPathService;
+import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import fr.paris.lutece.portal.service.workgroup.AdminWorkgroupService;
+import fr.paris.lutece.portal.util.mvc.admin.MVCAdminJspBean;
+import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
+import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
+import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
+import fr.paris.lutece.portal.web.admin.PluginAdminPageJspBean;
+import fr.paris.lutece.portal.web.constants.Messages;
+import fr.paris.lutece.portal.web.util.LocalizedPaginator;
+import fr.paris.lutece.util.ReferenceItem;
+import fr.paris.lutece.util.ReferenceList;
+import fr.paris.lutece.util.html.HtmlTemplate;
+import fr.paris.lutece.util.html.Paginator;
+import fr.paris.lutece.util.url.UrlItem;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+/**
+ * This class provides the user interface to manage contact features ( manage, create, modify, remove, change order of contact )
+ */
+@Controller( controllerJsp = &quot;ManageContactLists.jsp&quot;, controllerPath = &quot;jsp/admin/plugins/contact/&quot;, right = ContactListJspBean.RIGHT_MANAGE_CONTACT )
+<span class="nc" id="L71">public class ContactListJspBean extends MVCAdminJspBean</span>
+{
+    // Right
+    public static final String RIGHT_MANAGE_CONTACT = &quot;CONTACT_MANAGEMENT&quot;;
+
+    // properties for page titles
+    private static final String PROPERTY_PAGE_TITLE_CONTACTS = &quot;contact.manage_contact_lists.pageTitle&quot;;
+    private static final String PROPERTY_PAGE_TITLE_CREATE_CONTACTS = &quot;contact.create_contact_list.pageTitle&quot;;
+    private static final String PROPERTY_PAGE_TITLE_MANAGE_LIST_ASSIGNATIONS = &quot;contact.contact_list_assignations.pageTitle&quot;;
+    private static final String PROPERTY_PAGE_TITLE_MANAGE_CONTACT_ASSIGNATIONS = &quot;contact.contact_assignations.pageTitle&quot;;
+    private static final String PROPERTY_PAGE_TITLE_MODIFY = &quot;contact.modify_contact_list.pageTitle&quot;;
+
+    // templates
+    private static final String TEMPLATE_MANAGE_CONTACT_LISTS = &quot;/admin/plugins/contact/manage_contact_lists.html&quot;;
+    private static final String TEMPLATE_CREATE_CONTACT = &quot;/admin/plugins/contact/create_contact_list.html&quot;;
+    private static final String TEMPLATE_MANAGE_LIST_ASSIGNATIONS = &quot;/admin/plugins/contact/manage_list_assignations.html&quot;;
+    private static final String TEMPLATE_MANAGE_CONTACT_ASSIGNATIONS = &quot;/admin/plugins/contact/manage_contact_assignations.html&quot;;
+    private static final String TEMPLATE_MODIFY_CONTACT_LIST = &quot;/admin/plugins/contact/modify_contact_list.html&quot;;
+
+    // Markers
+    private static final String MARK_CONTACT_LIST = &quot;contact_list&quot;; // one contactList
+    private static final String MARK_LIST_CONTACTS = &quot;list_contacts&quot;;
+    private static final String MARK_LIST_CONTACT_LIST = &quot;list_contact_list&quot;;
+    private static final String MARK_CONTACTS_NUMBER = &quot;contacts_number&quot;;
+    private static final String MARK_CONTACT_ORDER_LIST = &quot;order_list&quot;;
+    private static final String MARK_ASSIGNED_CONTACT_LIST = &quot;assigned_contacts&quot;;
+    private static final String MARK_CONTACT = &quot;contact&quot;;
+    private static final String MARK_NOT_ASSIGNED_LISTS = &quot;not_assigned_lists&quot;;
+    private static final String MARK_ASSIGNED_LISTS = &quot;assigned_lists&quot;;
+    private static final String MARK_WORKGROUPS_LIST = &quot;workgroups_list&quot;;
+    private static final String MARK_PAGINATOR = &quot;paginator&quot;;
+    private static final String MARK_NB_ITEMS_PER_PAGE = &quot;nb_items_per_page&quot;;
+    private static final String MARK_ROLES_LIST = &quot;roles_list&quot;;
+    private static final String MARK_WEBAPP_URL = &quot;webapp_url&quot;;
+    private static final String MARK_LOCALE = &quot;locale&quot;;
+
+    // Parameters
+    private static final String PARAMETER_CONTACT_LIST_LABEL = &quot;contact_list_label&quot;;
+    private static final String PARAMETER_CONTACT_LIST_DESCRIPTION = &quot;contact_list_description&quot;;
+    private static final String PARAMETER_PAGE_INDEX = &quot;page_index&quot;;
+    private static final String PARAMETER_ID_CONTACT_LIST = &quot;id_contact_list&quot;;
+    private static final String PARAMETER_ID_CONTACT = &quot;id_contact&quot;;
+    private static final String PARAMETER_CONTACT_LIST = &quot;list_contact&quot;;
+    private static final String PARAMETER_CONTACTS_ORDER = &quot;contacts_order&quot;;
+    private static final String PARAMETER_CONTACT_LIST_ORDER = &quot;contact_list_order&quot;;
+    private static final String PARAMETER_WORKGROUP = &quot;workgroup&quot;;
+    private static final String PARAMETER_ROLE = &quot;role&quot;;
+    private static final String PARAMETER_TOS = &quot;active_tos&quot;;
+    private static final String PARAMETER_TOS_MESSAGE = &quot;tos_message&quot;;
+    private static final String PARAMETER_CANCEL = &quot;cancel&quot;;
+
+    // Properties
+    private static final String PROPERTY_DEFAULT_CONTACT_LIST_PER_PAGE = &quot;contact.contactList.itemsPerPage&quot;;
+
+    // messages
+    private static final String MESSAGE_CONFIRM_REMOVE_CONTACT_LIST = &quot;contact.message.confirmRemoveContactList&quot;;
+
+    // Views
+    private static final String VIEW_CREATE_CONTACT_LIST = &quot;viewCreateContactList&quot;;
+    private static final String VIEW_MODIFY_CONTACT_LIST = &quot;viewModifyContactList&quot;;
+    private static final String VIEW_MANAGE_CONTACT_LISTS = &quot;viewManageContactLists&quot;;
+    private static final String VIEW_CONFIRM_REMOVE_CONTACT_LIST = &quot;viewConfirmRemoveContactList&quot;;
+    private static final String VIEW_MANAGE_CONTACT_LIST_ASSIGNATIONS = &quot;viewManageContactListAssignation&quot;;
+    private static final String VIEW_MANAGE_CONTACT_ASSIGNATIONS = &quot;viewManageContactAssignation&quot;;
+
+    // Actions
+    private static final String ACTION_CREATE_CONTACT_LIST = &quot;actionCreateContactList&quot;;
+    private static final String ACTION_MODIFY_CONTACT_LIST = &quot;actionModifyContactList&quot;;
+    private static final String ACTION_REMOVE_CONTACT_LIST = &quot;actionRemoveContactList&quot;;
+    private static final String ACTION_MODIFY_CONTACT_LIST_ORDER = &quot;actionModifyContactListOrder&quot;;
+    private static final String ACTION_MODIFY_CONTACT_ORDER = &quot;actionModifyContactOrder&quot;;
+    private static final String ACTION_ASSIGN_LISTS_TO_CONTACT = &quot;actionAssignListsToContact&quot;;
+    private static final String ACTION_REVOKE_LISTS_FROM_CONTACT = &quot;actionRevokeListsFromContact&quot;;
+    private static final String ACTION_ASSIGN_CONTACTS_TO_LIST = &quot;actionAssignContactsToList&quot;;
+    private static final String ACTION_REVOKE_CONTACTS_FROM_LIST = &quot;actionRevokeContactsFromList&quot;;
+
+    // Variables
+    private int _nDefaultItemsPerPage;
+    private String _strCurrentPageIndex;
+    private int _nItemsPerPage;
+
+    /**
+     * returns the template of the contactLists management
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return template of lists management
+     */
+    @View( value = VIEW_MANAGE_CONTACT_LISTS, defaultView = true )
+    public String getManageContactLists( HttpServletRequest request )
+    {
+<span class="nc" id="L162">        _strCurrentPageIndex = Paginator.getPageIndex( request, Paginator.PARAMETER_PAGE_INDEX, _strCurrentPageIndex );</span>
+<span class="nc" id="L163">        _nDefaultItemsPerPage = AppPropertiesService.getPropertyInt( PROPERTY_DEFAULT_CONTACT_LIST_PER_PAGE, 50 );</span>
+<span class="nc" id="L164">        _nItemsPerPage = Paginator.getItemsPerPage( request, Paginator.PARAMETER_ITEMS_PER_PAGE, _nItemsPerPage, _nDefaultItemsPerPage );</span>
+
+<span class="nc" id="L166">        Collection&lt;ContactList&gt; listContactList = ContactListHome.findAll( getPlugin( ) );</span>
+
+<span class="nc" id="L168">        listContactList = AdminWorkgroupService.getAuthorizedCollection( listContactList, getUser( ) );</span>
+
+<span class="nc" id="L170">        LocalizedPaginator paginator = new LocalizedPaginator( (List&lt;ContactList&gt;) listContactList, _nItemsPerPage, getViewUrl( VIEW_MANAGE_CONTACT_LISTS ),</span>
+<span class="nc" id="L171">                PARAMETER_PAGE_INDEX, _strCurrentPageIndex, getLocale( ) );</span>
+
+<span class="nc" id="L173">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+
+<span class="nc" id="L175">        model.put( MARK_NB_ITEMS_PER_PAGE, &quot;&quot; + _nItemsPerPage );</span>
+<span class="nc" id="L176">        model.put( MARK_CONTACT_ORDER_LIST, getContactListOrderList( ) );</span>
+<span class="nc" id="L177">        model.put( MARK_PAGINATOR, paginator );</span>
+<span class="nc" id="L178">        model.put( MARK_LIST_CONTACT_LIST, paginator.getPageItems( ) );</span>
+
+<span class="nc" id="L180">        return getPage( PROPERTY_PAGE_TITLE_CONTACTS, TEMPLATE_MANAGE_CONTACT_LISTS, model );</span>
+    }
+
+    /**
+     * returns the form of contactList creation
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the HTML code of contactList form
+     */
+    @View( VIEW_CREATE_CONTACT_LIST )
+    public String getCreateContactList( HttpServletRequest request )
+    {
+<span class="nc" id="L193">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+<span class="nc" id="L194">        ReferenceList workgroupsList = AdminWorkgroupService.getUserWorkgroups( getUser( ), getLocale( ) );</span>
+<span class="nc" id="L195">        model.put( MARK_WEBAPP_URL, AppPathService.getBaseUrl( request ) );</span>
+<span class="nc" id="L196">        model.put( MARK_LOCALE, getLocale( ).getLanguage( ) );</span>
+<span class="nc" id="L197">        model.put( MARK_WORKGROUPS_LIST, workgroupsList );</span>
+<span class="nc" id="L198">        model.put( MARK_ROLES_LIST, RoleHome.getRolesList( ) );</span>
+
+<span class="nc" id="L200">        return getPage( PROPERTY_PAGE_TITLE_CREATE_CONTACTS, TEMPLATE_CREATE_CONTACT, model );</span>
+    }
+
+    /**
+     * Inserts a contactList into Database
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the lsit of contactLists
+     */
+    @Action( ACTION_CREATE_CONTACT_LIST )
+    public String doCreateContactList( HttpServletRequest request )
+    {
+<span class="nc" id="L213">        ContactList contactList = new ContactList( );</span>
+<span class="nc" id="L214">        String strLabel = request.getParameter( PARAMETER_CONTACT_LIST_LABEL );</span>
+<span class="nc" id="L215">        String strDescription = request.getParameter( PARAMETER_CONTACT_LIST_DESCRIPTION );</span>
+<span class="nc" id="L216">        String strWorkgroup = request.getParameter( PARAMETER_WORKGROUP );</span>
+<span class="nc" id="L217">        String strRole = request.getParameter( PARAMETER_ROLE );</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        boolean bTos = request.getParameter( PARAMETER_TOS ) != null;</span>
+<span class="nc" id="L219">        String strTosMessage = request.getParameter( PARAMETER_TOS_MESSAGE );</span>
+
+<span class="nc bnc" id="L221" title="All 4 branches missed.">        if ( ( strLabel.equals( &quot;&quot; ) ) || ( strDescription.equals( &quot;&quot; ) ) )</span>
+        {
+<span class="nc" id="L223">            return redirect( request, AdminMessageService.getMessageUrl( request, Messages.MANDATORY_FIELDS, AdminMessage.TYPE_STOP ) );</span>
+        }
+
+<span class="nc" id="L226">        contactList.setLabel( strLabel );</span>
+<span class="nc" id="L227">        contactList.setDescription( strDescription );</span>
+<span class="nc" id="L228">        contactList.setWorkgroup( strWorkgroup );</span>
+<span class="nc" id="L229">        contactList.setRole( strRole );</span>
+<span class="nc" id="L230">        contactList.setTos( bTos );</span>
+<span class="nc" id="L231">        contactList.setTosMessage( strTosMessage );</span>
+<span class="nc" id="L232">        ContactListHome.create( contactList, getPlugin( ) );</span>
+
+        // if the operation occurred well, redirects towards the list of the ContactList
+<span class="nc" id="L235">        return redirectView( request, VIEW_MANAGE_CONTACT_LISTS );</span>
+    }
+
+    /**
+     * returns the template of modification form
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the HTML code of modify contactList form
+     */
+    @View( VIEW_MODIFY_CONTACT_LIST )
+    public String getModifyContactList( HttpServletRequest request )
+    {
+<span class="nc" id="L248">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+
+<span class="nc" id="L250">        int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+
+<span class="nc" id="L252">        ReferenceList workgroupsList = AdminWorkgroupService.getUserWorkgroups( getUser( ), getLocale( ) );</span>
+<span class="nc" id="L253">        ContactList contactList = ContactListHome.findByPrimaryKey( nId, getPlugin( ) );</span>
+
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        if ( contactList == null )</span>
+        {
+<span class="nc" id="L257">            return getManageContactLists( request );</span>
+        }
+
+<span class="nc" id="L260">        model.put( MARK_WEBAPP_URL, AppPathService.getBaseUrl( request ) );</span>
+<span class="nc" id="L261">        model.put( MARK_LOCALE, getLocale( ).getLanguage( ) );</span>
+<span class="nc" id="L262">        model.put( MARK_WORKGROUPS_LIST, workgroupsList );</span>
+<span class="nc" id="L263">        model.put( MARK_CONTACT_LIST, contactList );</span>
+<span class="nc" id="L264">        model.put( MARK_ROLES_LIST, RoleHome.getRolesList( ) );</span>
+
+<span class="nc" id="L266">        return getPage( PROPERTY_PAGE_TITLE_MODIFY, TEMPLATE_MODIFY_CONTACT_LIST, model );</span>
+    }
+
+    /**
+     * updates the contactList in database
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the contactList list
+     */
+    @Action( ACTION_MODIFY_CONTACT_LIST )
+    public String doModifyContactList( HttpServletRequest request )
+    {
+<span class="nc" id="L279">        int nId = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+<span class="nc" id="L280">        ContactList contactList = ContactListHome.findByPrimaryKey( nId, getPlugin( ) );</span>
+<span class="nc" id="L281">        contactList.setLabel( request.getParameter( PARAMETER_CONTACT_LIST_LABEL ) );</span>
+<span class="nc" id="L282">        contactList.setDescription( request.getParameter( PARAMETER_CONTACT_LIST_DESCRIPTION ) );</span>
+<span class="nc" id="L283">        contactList.setWorkgroup( request.getParameter( PARAMETER_WORKGROUP ) );</span>
+<span class="nc" id="L284">        contactList.setRole( request.getParameter( PARAMETER_ROLE ) );</span>
+<span class="nc bnc" id="L285" title="All 2 branches missed.">        contactList.setTos( request.getParameter( PARAMETER_TOS ) != null );</span>
+<span class="nc" id="L286">        contactList.setTosMessage( request.getParameter( PARAMETER_TOS_MESSAGE ) );</span>
+
+        // Mandatory fields
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        if ( request.getParameter( PARAMETER_CONTACT_LIST_LABEL ).equals( &quot;&quot; ) )</span>
+        {
+<span class="nc" id="L291">            return redirect( request, AdminMessageService.getMessageUrl( request, Messages.MANDATORY_FIELDS, AdminMessage.TYPE_STOP ) );</span>
+        }
+
+<span class="nc" id="L294">        ContactListHome.update( contactList, getPlugin( ) );</span>
+
+<span class="nc" id="L296">        return redirectView( request, VIEW_MANAGE_CONTACT_LISTS );</span>
+    }
+
+    /**
+     * Manages the removal form of a contact list
+     * 
+     * @param request
+     *            The Http request
+     * @return the html code to confirm
+     */
+    @View( VIEW_CONFIRM_REMOVE_CONTACT_LIST )
+    public String getConfirmRemoveContactList( HttpServletRequest request )
+    {
+<span class="nc" id="L309">        UrlItem url = new UrlItem( getActionUrl( ACTION_REMOVE_CONTACT_LIST ) );</span>
+<span class="nc" id="L310">        url.addParameter( PARAMETER_ID_CONTACT_LIST, request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+
+<span class="nc" id="L312">        return redirect( request,</span>
+<span class="nc" id="L313">                AdminMessageService.getMessageUrl( request, MESSAGE_CONFIRM_REMOVE_CONTACT_LIST, url.getUrl( ), AdminMessage.TYPE_CONFIRMATION ) );</span>
+    }
+
+    /**
+     * removes a record from database
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the contactList list
+     */
+    @Action( ACTION_REMOVE_CONTACT_LIST )
+    public String doRemoveContactList( HttpServletRequest request )
+    {
+<span class="nc" id="L326">        int nIdContactList = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+<span class="nc" id="L327">        int nOrder = ContactListHome.getContactListOrderById( nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L328">        int nNewOrder = ContactListHome.getMaxOrderContactList( getPlugin( ) );</span>
+<span class="nc" id="L329">        ContactListHome.unassignContactsForList( nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L330">        modifyContactListsOrder( nOrder, nNewOrder, nIdContactList );</span>
+<span class="nc" id="L331">        ContactListHome.remove( nIdContactList, getPlugin( ) );</span>
+
+        // Go to the parent page
+<span class="nc" id="L334">        return redirectView( request, VIEW_MANAGE_CONTACT_LISTS );</span>
+    }
+
+    /**
+     * returns the template of list assignations
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the HTML code of list assignations
+     */
+    @View( VIEW_MANAGE_CONTACT_LIST_ASSIGNATIONS )
+    public String getManageListAssignations( HttpServletRequest request )
+    {
+<span class="nc" id="L347">        String strIdContactList = request.getParameter( PARAMETER_ID_CONTACT_LIST );</span>
+<span class="nc" id="L348">        int nIdContactList = Integer.parseInt( strIdContactList );</span>
+<span class="nc" id="L349">        ContactList contactList = ContactListHome.findByPrimaryKey( nIdContactList, getPlugin( ) ); // The contactList object concerned -- One obecjt</span>
+
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        if ( contactList == null )</span>
+        {
+<span class="nc" id="L353">            return getManageContactLists( request );</span>
+        }
+
+<span class="nc" id="L356">        Collection&lt;Contact&gt; notAssignedContacts = ContactListHome.getNotAssignedContactsFor( nIdContactList, getPlugin( ) ); // The list of contacts objects --</span>
+                                                                                                                             // One list of saveral objects
+<span class="nc" id="L358">        notAssignedContacts = AdminWorkgroupService.getAuthorizedCollection( notAssignedContacts, getUser( ) );</span>
+
+<span class="nc" id="L360">        ReferenceList refListNotAssigned = new ReferenceList( );</span>
+
+<span class="nc bnc" id="L362" title="All 2 branches missed.">        for ( Contact contact : notAssignedContacts )</span>
+        {
+<span class="nc" id="L364">            ReferenceItem item = new ReferenceItem( );</span>
+<span class="nc" id="L365">            item.setCode( Integer.toString( contact.getId( ) ) );</span>
+<span class="nc" id="L366">            item.setName( &quot;[ &quot; + contact.getWorkgroup( ) + &quot; ] &quot; + contact.getName( ) );</span>
+<span class="nc" id="L367">            refListNotAssigned.add( item );</span>
+<span class="nc" id="L368">        }</span>
+
+<span class="nc" id="L370">        Collection&lt;Contact&gt; assignedContacts = ContactListHome.getAssignedContactsFor( nIdContactList, getPlugin( ) );</span>
+
+<span class="nc" id="L372">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+<span class="nc" id="L373">        model.put( MARK_CONTACT_LIST, contactList );</span>
+<span class="nc" id="L374">        model.put( MARK_LIST_CONTACTS, refListNotAssigned );</span>
+<span class="nc" id="L375">        model.put( MARK_ASSIGNED_CONTACT_LIST, assignedContacts );</span>
+<span class="nc" id="L376">        model.put( MARK_CONTACTS_NUMBER, ContactListHome.countContactsForList( nIdContactList, getPlugin( ) ) );</span>
+<span class="nc" id="L377">        model.put( MARK_CONTACT_ORDER_LIST, getContactOrderList( nIdContactList ) );</span>
+
+<span class="nc" id="L379">        return getPage( PROPERTY_PAGE_TITLE_MANAGE_LIST_ASSIGNATIONS, TEMPLATE_MANAGE_LIST_ASSIGNATIONS, model );</span>
+    }
+
+    /**
+     * assigns a contact to a list in database
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the template of list assignations
+     */
+    @Action( ACTION_ASSIGN_CONTACTS_TO_LIST )
+    public String doAssignContactsToList( HttpServletRequest request )
+    {
+<span class="nc" id="L392">        String strActionCancel = request.getParameter( PARAMETER_CANCEL );</span>
+
+<span class="nc bnc" id="L394" title="All 2 branches missed.">        if ( strActionCancel != null )</span>
+        {
+<span class="nc" id="L396">            return redirectView( request, VIEW_MANAGE_CONTACT_LISTS );</span>
+        }
+
+        // retrieve the selected portlets ids
+<span class="nc" id="L400">        String [ ] arrayContactsIds = request.getParameterValues( PARAMETER_CONTACT_LIST );</span>
+<span class="nc" id="L401">        int nIdContactList = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+
+<span class="nc bnc" id="L403" title="All 2 branches missed.">        if ( ( arrayContactsIds != null ) )</span>
+        {
+<span class="nc bnc" id="L405" title="All 2 branches missed.">            for ( int i = 0; i &lt; arrayContactsIds.length; i++ )</span>
+            {
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                if ( !ContactListHome.isAssigned( Integer.parseInt( arrayContactsIds [i] ), nIdContactList, getPlugin( ) ) )</span>
+                {
+<span class="nc" id="L409">                    ContactListHome.assign( Integer.parseInt( arrayContactsIds [i] ), nIdContactList, getPlugin( ) );</span>
+                }
+            }
+        }
+
+<span class="nc" id="L414">        return redirect( request, VIEW_MANAGE_CONTACT_LIST_ASSIGNATIONS, PARAMETER_ID_CONTACT_LIST, nIdContactList );</span>
+    }
+
+    /**
+     * unassigns contact from list
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the HTML code of list assignations
+     */
+    @Action( ACTION_REVOKE_CONTACTS_FROM_LIST )
+    public String doUnAssignContact( HttpServletRequest request )
+    {
+<span class="nc" id="L427">        int nIdContactList = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+<span class="nc" id="L428">        int nIdContact = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT ) );</span>
+
+<span class="nc" id="L430">        int nOrder = ContactHome.getContactOrderById( nIdContact, nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L431">        int nNewOrder = ContactListHome.getMaxOrderContact( nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L432">        modifyContactsOrder( nIdContact, nOrder, nNewOrder, nIdContactList );</span>
+<span class="nc" id="L433">        ContactListHome.unAssign( nIdContact, nIdContactList, getPlugin( ) );</span>
+
+<span class="nc" id="L435">        return redirect( request, VIEW_MANAGE_CONTACT_LIST_ASSIGNATIONS, PARAMETER_ID_CONTACT_LIST, nIdContactList );</span>
+    }
+
+    /**
+     * unassigns list from a contact
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the html code of contact assignations
+     */
+    @Action( ACTION_REVOKE_LISTS_FROM_CONTACT )
+    public String doUnAssignList( HttpServletRequest request )
+    {
+<span class="nc" id="L448">        int nIdContactList = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+<span class="nc" id="L449">        int nIdContact = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT ) );</span>
+<span class="nc" id="L450">        ContactListHome.unAssign( nIdContact, nIdContactList, getPlugin( ) );</span>
+
+<span class="nc" id="L452">        return redirect( request, VIEW_MANAGE_CONTACT_ASSIGNATIONS, PARAMETER_ID_CONTACT, nIdContact );</span>
+    }
+
+    /**
+     * gets the assignations page of a contact
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the HTML code of contact assignations
+     */
+    @View( VIEW_MANAGE_CONTACT_ASSIGNATIONS )
+    public String getManageContactAssignations( HttpServletRequest request )
+    {
+<span class="nc" id="L465">        int nIdContact = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT ) );</span>
+<span class="nc" id="L466">        Contact contact = ContactHome.findByPrimaryKey( nIdContact, getPlugin( ) );</span>
+<span class="nc" id="L467">        Collection&lt;ContactList&gt; notAssignedLists = ContactListHome.getNotAssignedListsFor( nIdContact, getPlugin( ) );</span>
+<span class="nc" id="L468">        notAssignedLists = AdminWorkgroupService.getAuthorizedCollection( notAssignedLists, getUser( ) );</span>
+
+<span class="nc" id="L470">        ReferenceList refListNotAssigned = new ReferenceList( );</span>
+
+<span class="nc bnc" id="L472" title="All 2 branches missed.">        for ( ContactList contactList : notAssignedLists )</span>
+        {
+<span class="nc" id="L474">            ReferenceItem item = new ReferenceItem( );</span>
+<span class="nc" id="L475">            item.setCode( Integer.toString( contactList.getId( ) ) );</span>
+<span class="nc" id="L476">            item.setName( contactList.getLabel( ) );</span>
+<span class="nc" id="L477">            refListNotAssigned.add( item );</span>
+<span class="nc" id="L478">        }</span>
+
+<span class="nc" id="L480">        Collection&lt;ContactList&gt; assignedLists = ContactListHome.getAssignedListsFor( nIdContact, getPlugin( ) );</span>
+
+<span class="nc" id="L482">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+<span class="nc" id="L483">        model.put( MARK_CONTACT, contact );</span>
+<span class="nc" id="L484">        model.put( MARK_NOT_ASSIGNED_LISTS, refListNotAssigned );</span>
+<span class="nc" id="L485">        model.put( MARK_ASSIGNED_LISTS, assignedLists );</span>
+
+<span class="nc" id="L487">        return getPage( PROPERTY_PAGE_TITLE_MANAGE_CONTACT_ASSIGNATIONS, TEMPLATE_MANAGE_CONTACT_ASSIGNATIONS, model );</span>
+    }
+
+    /**
+     * assigns lists to one contact
+     * 
+     * @param request
+     *            The HttpRequest
+     * @return the HTML code of contact assignations
+     */
+    @Action( ACTION_ASSIGN_LISTS_TO_CONTACT )
+    public String doAssignListsToContact( HttpServletRequest request )
+    {
+<span class="nc" id="L500">        String strActionCancel = request.getParameter( PARAMETER_CANCEL );</span>
+
+<span class="nc bnc" id="L502" title="All 2 branches missed.">        if ( strActionCancel != null )</span>
+        {
+<span class="nc" id="L504">            return redirectView( request, VIEW_MANAGE_CONTACT_LISTS );</span>
+        }
+
+        // retrieve the selected portlets ids
+<span class="nc" id="L508">        String [ ] arrayListsIds = request.getParameterValues( PARAMETER_CONTACT_LIST );</span>
+<span class="nc" id="L509">        int nIdContact = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT ) );</span>
+
+<span class="nc bnc" id="L511" title="All 2 branches missed.">        if ( ( arrayListsIds != null ) )</span>
+        {
+<span class="nc bnc" id="L513" title="All 2 branches missed.">            for ( int i = 0; i &lt; arrayListsIds.length; i++ )</span>
+            {
+<span class="nc bnc" id="L515" title="All 2 branches missed.">                if ( !ContactListHome.isAssigned( nIdContact, Integer.parseInt( arrayListsIds [i] ), getPlugin( ) ) )</span>
+                {
+<span class="nc" id="L517">                    ContactListHome.assign( nIdContact, Integer.parseInt( arrayListsIds [i] ), getPlugin( ) );</span>
+                }
+            }
+        }
+
+<span class="nc" id="L522">        return redirect( request, VIEW_MANAGE_CONTACT_ASSIGNATIONS, PARAMETER_ID_CONTACT, nIdContact );</span>
+    }
+
+    /**
+     * Modifies the order in the list of contacts
+     * 
+     * @param request
+     *            The Http request
+     * @return The Jsp URL of the process result
+     */
+    @Action( ACTION_MODIFY_CONTACT_ORDER )
+    public String doModifyContactsOrder( HttpServletRequest request )
+    {
+<span class="nc" id="L535">        int nIdContact = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT ) );</span>
+<span class="nc" id="L536">        int nIdContactList = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+
+<span class="nc" id="L538">        int nOrder = ContactHome.getContactOrderById( nIdContact, nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L539">        int nNewOrder = Integer.parseInt( request.getParameter( PARAMETER_CONTACTS_ORDER ) );</span>
+<span class="nc" id="L540">        modifyContactsOrder( nIdContact, nOrder, nNewOrder, nIdContactList );</span>
+
+<span class="nc" id="L542">        return redirect( request, VIEW_MANAGE_CONTACT_LIST_ASSIGNATIONS, PARAMETER_ID_CONTACT_LIST, nIdContactList );</span>
+    }
+
+    /**
+     * Builts a list of sequence numbers
+     * 
+     * @param nIdContactList
+     *            the id of the contactList
+     * @return the list of sequence numbers
+     */
+    private ReferenceList getContactOrderList( int nIdContactList )
+    {
+<span class="nc" id="L554">        int nMax = ContactListHome.getMaxOrderContact( nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L555">        ReferenceList list = new ReferenceList( );</span>
+
+<span class="nc bnc" id="L557" title="All 2 branches missed.">        for ( int i = 1; i &lt; ( nMax + 1 ); i++ )</span>
+        {
+<span class="nc" id="L559">            list.addItem( i, Integer.toString( i ) );</span>
+        }
+
+<span class="nc" id="L562">        return list;</span>
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // Private implementation
+
+    /**
+     * Modify the place in the list for a contact
+     * 
+     * @param nId
+     *            the contact identifier
+     * @param nOrder
+     *            the actual place in the list
+     * @param nNewOrder
+     *            the new place in the list
+     * @param nIdContactList
+     *            the id of the contactList
+     */
+    private void modifyContactsOrder( int nId, int nOrder, int nNewOrder, int nIdContactList )
+    {
+<span class="nc bnc" id="L582" title="All 2 branches missed.">        if ( nNewOrder &lt; nOrder )</span>
+        {
+<span class="nc bnc" id="L584" title="All 2 branches missed.">            for ( int i = nOrder - 1; i &gt; ( nNewOrder - 1 ); i-- )</span>
+            {
+<span class="nc" id="L586">                int nIdContactOrder = ContactHome.getContactIdByOrder( i, nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L587">                ContactHome.updateContactOrder( i + 1, nIdContactOrder, nIdContactList, getPlugin( ) );</span>
+            }
+
+<span class="nc" id="L590">            ContactHome.updateContactOrder( nNewOrder, nId, nIdContactList, getPlugin( ) );</span>
+        }
+        else
+        {
+<span class="nc bnc" id="L594" title="All 2 branches missed.">            for ( int i = nOrder; i &lt; ( nNewOrder + 1 ); i++ )</span>
+            {
+<span class="nc" id="L596">                int nIdContactOrder = ContactHome.getContactIdByOrder( i, nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L597">                ContactHome.updateContactOrder( i - 1, nIdContactOrder, nIdContactList, getPlugin( ) );</span>
+            }
+
+<span class="nc" id="L600">            ContactHome.updateContactOrder( nNewOrder, nId, nIdContactList, getPlugin( ) );</span>
+        }
+<span class="nc" id="L602">    }</span>
+
+    /**
+     * Modifies the order in the list of contactLists
+     * 
+     * @param request
+     *            The Http request
+     * @return The Jsp URL of the process result
+     */
+    @Action( ACTION_MODIFY_CONTACT_LIST_ORDER )
+    public String doModifyContactListsOrder( HttpServletRequest request )
+    {
+<span class="nc" id="L614">        int nIdContactList = Integer.parseInt( request.getParameter( PARAMETER_ID_CONTACT_LIST ) );</span>
+
+<span class="nc" id="L616">        int nOrder = ContactListHome.getContactListOrderById( nIdContactList, getPlugin( ) );</span>
+<span class="nc" id="L617">        int nNewOrder = Integer.parseInt( request.getParameter( PARAMETER_CONTACT_LIST_ORDER ) );</span>
+<span class="nc" id="L618">        modifyContactListsOrder( nOrder, nNewOrder, nIdContactList );</span>
+
+<span class="nc" id="L620">        return redirectView( request, VIEW_MANAGE_CONTACT_LISTS );</span>
+    }
+
+    /**
+     * Builts a list of sequence numbers
+     * 
+     * @return the list of sequence numbers
+     */
+    private ReferenceList getContactListOrderList( )
+    {
+<span class="nc" id="L630">        int nMax = ContactListHome.getMaxOrderContactList( getPlugin( ) );</span>
+<span class="nc" id="L631">        ReferenceList list = new ReferenceList( );</span>
+
+<span class="nc bnc" id="L633" title="All 2 branches missed.">        for ( int i = 1; i &lt; ( nMax + 1 ); i++ )</span>
+        {
+<span class="nc" id="L635">            list.addItem( i, Integer.toString( i ) );</span>
+        }
+
+<span class="nc" id="L638">        return list;</span>
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    // Private implementation
+
+    /**
+     * Modify the place in the list for a contact
+     * 
+     * @param nId
+     *            the contact identifier
+     * @param nOrder
+     *            the actual place in the list
+     * @param nNewOrder
+     *            the new place in the list
+     * @param nIdContactList
+     *            the id of the contactList
+     */
+    private void modifyContactListsOrder( int nOrder, int nNewOrder, int nIdContactList )
+    {
+<span class="nc bnc" id="L658" title="All 2 branches missed.">        if ( nNewOrder &lt; nOrder )</span>
+        {
+<span class="nc bnc" id="L660" title="All 2 branches missed.">            for ( int i = nOrder - 1; i &gt; ( nNewOrder - 1 ); i-- )</span>
+            {
+<span class="nc" id="L662">                int nIdContactListOrder = ContactListHome.getContactListIdByOrder( i, getPlugin( ) );</span>
+<span class="nc" id="L663">                ContactListHome.updateContactListOrder( i + 1, nIdContactListOrder, getPlugin( ) );</span>
+            }
+
+<span class="nc" id="L666">            ContactListHome.updateContactListOrder( nNewOrder, nIdContactList, getPlugin( ) );</span>
+        }
+        else
+        {
+<span class="nc bnc" id="L670" title="All 2 branches missed.">            for ( int i = nOrder; i &lt; ( nNewOrder + 1 ); i++ )</span>
+            {
+<span class="nc" id="L672">                int nIdContactListOrder = ContactListHome.getContactListIdByOrder( i, getPlugin( ) );</span>
+<span class="nc" id="L673">                ContactListHome.updateContactListOrder( i - 1, nIdContactListOrder, getPlugin( ) );</span>
+            }
+
+<span class="nc" id="L676">            ContactListHome.updateContactListOrder( nNewOrder, nIdContactList, getPlugin( ) );</span>
+        }
+<span class="nc" id="L678">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>

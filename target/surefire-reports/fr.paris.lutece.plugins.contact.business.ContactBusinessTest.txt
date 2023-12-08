@@ -1,0 +1,7 @@
+-------------------------------------------------------------------------------
+Test set: fr.paris.lutece.plugins.contact.business.ContactBusinessTest
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 4.575 s <<< FAILURE! - in fr.paris.lutece.plugins.contact.business.ContactBusinessTest
+testBusinessContact(fr.paris.lutece.plugins.contact.business.ContactBusinessTest)  Time elapsed: 4.22 s  <<< ERROR!
+java.lang.NullPointerException
+

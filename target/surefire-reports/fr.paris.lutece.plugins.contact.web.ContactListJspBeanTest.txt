@@ -1,0 +1,28 @@
+-------------------------------------------------------------------------------
+Test set: fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest
+-------------------------------------------------------------------------------
+Tests run: 8, Failures: 0, Errors: 8, Skipped: 0, Time elapsed: 1.893 s <<< FAILURE! - in fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest
+testGetManageListAssignations(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.145 s  <<< ERROR!
+java.lang.NullPointerException
+
+testGetConfirmRemoveContactList(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.089 s  <<< ERROR!
+java.lang.NullPointerException
+
+testGetManageContactLists(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.17 s  <<< ERROR!
+java.lang.NullPointerException
+
+testGetManageContactAssignations(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.452 s  <<< ERROR!
+java.lang.NullPointerException
+
+testGetModifyContactList(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.424 s  <<< ERROR!
+java.lang.NullPointerException
+
+testDoModifyContactList(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.27 s  <<< ERROR!
+java.lang.NullPointerException
+
+testGetCreateContactList(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.134 s  <<< ERROR!
+java.lang.NullPointerException
+
+testDoCreateContactList(fr.paris.lutece.plugins.contact.web.ContactListJspBeanTest)  Time elapsed: 0.206 s  <<< ERROR!
+java.lang.NullPointerException
+

@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="fr"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ContactApp.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Lutece contact plugin</a> &gt; <a href="index.source.html" class="el_package">fr.paris.lutece.plugins.contact.web</a> &gt; <span class="el_source">ContactApp.java</span></div><h1>ContactApp.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2002-2021, City of Paris
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice
+ *     and the following disclaimer.
+ *
+ *  2. Redistributions in binary form must reproduce the above copyright notice
+ *     and the following disclaimer in the documentation and/or other materials
+ *     provided with the distribution.
+ *
+ *  3. Neither the name of 'Mairie de Paris' nor 'Lutece' nor the names of its
+ *     contributors may be used to endorse or promote products derived from
+ *     this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * License 1.0
+ */
+package fr.paris.lutece.plugins.contact.web;
+
+import fr.paris.lutece.plugins.contact.business.Contact;
+import fr.paris.lutece.plugins.contact.business.ContactHome;
+import fr.paris.lutece.plugins.contact.business.ContactList;
+import fr.paris.lutece.plugins.contact.business.ContactListHome;
+import fr.paris.lutece.plugins.contact.service.ContactPlugin;
+import fr.paris.lutece.portal.service.captcha.CaptchaSecurityService;
+import fr.paris.lutece.portal.service.content.XPageAppService;
+import fr.paris.lutece.portal.service.i18n.I18nService;
+import fr.paris.lutece.portal.service.mail.MailService;
+import fr.paris.lutece.portal.service.message.SiteMessage;
+import fr.paris.lutece.portal.service.message.SiteMessageException;
+import fr.paris.lutece.portal.service.message.SiteMessageService;
+import fr.paris.lutece.portal.service.plugin.Plugin;
+import fr.paris.lutece.portal.service.plugin.PluginService;
+import fr.paris.lutece.portal.service.security.LuteceUser;
+import fr.paris.lutece.portal.service.security.SecurityService;
+import fr.paris.lutece.portal.service.security.UserNotSignedException;
+import fr.paris.lutece.portal.service.template.AppTemplateService;
+import fr.paris.lutece.portal.util.mvc.commons.annotations.Action;
+import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
+import fr.paris.lutece.portal.util.mvc.utils.MVCUtils;
+import fr.paris.lutece.portal.util.mvc.xpage.MVCApplication;
+import fr.paris.lutece.portal.util.mvc.xpage.annotations.Controller;
+import fr.paris.lutece.portal.web.xpages.XPage;
+import fr.paris.lutece.util.ReferenceList;
+import fr.paris.lutece.util.date.DateUtil;
+import fr.paris.lutece.util.html.HtmlTemplate;
+import fr.paris.lutece.util.string.StringUtil;
+import fr.paris.lutece.util.url.UrlItem;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * This class manages Contact page.
+ */
+@Controller( xpageName = &quot;contact&quot;, pageTitleI18nKey = &quot;contact.pagePathLabel&quot;, pagePathI18nKey = &quot;subscribe.pageTitle&quot; )
+<span class="nc" id="L80">public class ContactApp extends MVCApplication</span>
+{
+    /** Serial id */
+    private static final long serialVersionUID = 6553298772139973292L;
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Constants
+    private static final String TEMPLATE_XPAGE_CONTACT = &quot;skin/plugins/contact/page_contact.html&quot;;
+    private static final String TEMPLATE_XPAGE_LISTS = &quot;skin/plugins/contact/page_lists.html&quot;;
+    private static final String TEMPLATE_MESSAGE_CONTACT = &quot;skin/plugins/contact/message_contact.html&quot;;
+    private static final String MARK_CONTACTS_LIST = &quot;contacts_list&quot;;
+    private static final String MARK_DEFAULT_CONTACT = &quot;default_contact&quot;;
+    private static final String MARK_CONTACT_ALERT_MSG = &quot;alert_msg&quot;;
+    private static final String MARK_VISITOR_LASTNAME = &quot;visitor_last_name&quot;;
+    private static final String MARK_VISITOR_FIRSTNAME = &quot;visitor_first_name&quot;;
+    private static final String MARK_VISITOR_ADDRESS = &quot;visitor_address&quot;;
+    private static final String MARK_VISITOR_EMAIL = &quot;visitor_email&quot;;
+    private static final String MARK_OBJECT = &quot;message_object&quot;;
+    private static final String MARK_MESSAGE = &quot;message&quot;;
+    private static final String MARK_STYLE_LAST_NAME = &quot;style_last_name&quot;;
+    private static final String MARK_STYLE_FIRST_NAME = &quot;style_first_name&quot;;
+    private static final String MARK_STYLE_EMAIL = &quot;style_email&quot;;
+    private static final String MARK_STYLE_OBJECT = &quot;style_object&quot;;
+    private static final String MARK_STYLE_MESSAGE = &quot;style_message&quot;;
+    private static final String MARK_STYLE_CONTACT = &quot;style_contact&quot;;
+    private static final String MARK_PORTAL_URL = &quot;portal_url&quot;;
+    private static final String MARK_CONTACT_NAME = &quot;contact_name&quot;;
+    private static final String MARK_CURRENT_DATE = &quot;current_date&quot;;
+    private static final String MARK_CAPTCHA = &quot;captcha&quot;;
+    private static final String MARK_IS_ACTIVE_CAPTCHA = &quot;is_active_captcha&quot;;
+    private static final String MARK_IS_TOS_REQUIRED = &quot;is_tos_required&quot;;
+    private static final String MARK_TOS_MESSAGE = &quot;tos_message&quot;;
+    private static final String MARK_TOS_ACCEPTED = &quot;accept_tos&quot;;
+    // private static final String MARK_ROLE = &quot;role&quot;;
+    private static final String MARK_LIST_OF_LISTS = &quot;list_of_lists&quot;;
+    private static final String MARK_ID_CONTACT_LIST = &quot;id_contact_list&quot;;
+    private static final String MARK_MYLUTECE_USER = &quot;mylutece_user&quot;;
+    private static final String PARAMETER_PAGE = &quot;page&quot;;
+    private static final String PARAMETER_CONTACT = &quot;contact&quot;;
+    private static final String PARAMETER_VISITOR_LASTNAME = &quot;visitor_last_name&quot;;
+    private static final String PARAMETER_VISITOR_FIRSTNAME = &quot;visitor_first_name&quot;;
+    private static final String PARAMETER_VISITOR_ADDRESS = &quot;visitor_address&quot;;
+    private static final String PARAMETER_VISITOR_EMAIL = &quot;visitor_email&quot;;
+    private static final String PARAMETER_MESSAGE_OBJECT = &quot;message_object&quot;;
+    private static final String PARAMETER_MESSAGE = &quot;message&quot;;
+    private static final String PARAMETER_SEND = &quot;send&quot;;
+    private static final String PARAMETER_ID_CONTACT_LIST = &quot;id_contact_list&quot;;
+    private static final String PARAMETER_TOS_ACCEPTED = &quot;accept_tos&quot;;
+    private static final String PROPERTY_SENDING_OK = &quot;contact.message_contact.sending.ok&quot;;
+    private static final String PROPERTY_MANDATORY_FIELD_MISSING = &quot;contact.message_contact.mandatory.field&quot;;
+    private static final String PROPERTY_SENDING_NOK = &quot;contact.message_contact.sending.nok&quot;;
+    private static final String PROPERTY_RECIPIENT_MISSING = &quot;contact.message_contact.recipient.missing&quot;;
+    private static final String PROPERTY_ERROR_EMAIL = &quot;contact.message_contact.error.email&quot;;
+    private static final String PROPERTY_COMBO_CHOOSE = &quot;contact.message_contact.comboChoose&quot;;
+    private static final String PROPERTY_CAPTCHA_ERROR = &quot;contact.message_contact.captchaError&quot;;
+    private static final String PROPERTY_TOS_ERROR = &quot;contact.message_contact.tosRequired&quot;;
+    // private static final String PROPERTY_NO_ID_FOUND = &quot;contact.message_contact.noIdFound&quot;;
+    private static final String PROPERTY_LIST_NOT_EXISTS = &quot;contact.message_contact.listNotExists&quot;;
+    private static final String PROPERTY_NOT_AUTHORIZED = &quot;contact.message_contact.notauthorized&quot;;
+    private static final String PROPERTY_NO_LIST_VISIBLE = &quot;contact.message_contact.noListVisible&quot;;
+    private static final String JCAPTCHA_PLUGIN = &quot;jcaptcha&quot;;
+    private static final String EMPTY_STRING = &quot;&quot;;
+    private static final String ACTION_SEND_MESSAGE = &quot;actionSendMessage&quot;;
+    private static final String VIEW_CONTACT_LISTS = &quot;viewContactLists&quot;;
+    private static final String VIEW_CONTACT_PAGE = &quot;viewContactPage&quot;;
+
+    // Captcha
+    private CaptchaSecurityService _captchaService;
+
+    // private fields
+    private Plugin _plugin;
+
+    /**
+     * Returns the content of the page
+     *
+     * @param request
+     *            The http request
+     * @param nMode
+     *            The current mode
+     * @param plugin
+     *            The plugin object
+     * @return The XPage
+     * @throws fr.paris.lutece.portal.service.message.SiteMessageException
+     *             Message displayed if an exception occurs
+     * @throws UserNotSignedException
+     *             if an authentication is required by a view
+     */
+    @Override
+    public XPage getPage( HttpServletRequest request, int nMode, Plugin plugin ) throws SiteMessageException, UserNotSignedException
+    {
+<span class="nc" id="L170">        String strPluginName = request.getParameter( PARAMETER_PAGE );</span>
+<span class="nc" id="L171">        _plugin = PluginService.getPlugin( strPluginName );</span>
+
+<span class="nc" id="L173">        return super.getPage( request, nMode, plugin );</span>
+    }
+
+    /**
+     * Checks if the page is visible for the current user
+     * 
+     * @param request
+     *            The HTTP request
+     * @param strRole
+     *            the role to check
+     * @return true if the page could be shown to the user
+     * @since v1.3.1
+     */
+    private boolean isVisible( HttpServletRequest request, String strRole )
+    {
+<span class="nc bnc" id="L188" title="All 4 branches missed.">        if ( ( strRole == null ) || ( strRole.trim( ).equals( EMPTY_STRING ) ) )</span>
+        {
+<span class="nc" id="L190">            return true;</span>
+        }
+
+<span class="nc bnc" id="L193" title="All 4 branches missed.">        if ( !strRole.equals( ContactList.ROLE_NONE ) &amp;&amp; SecurityService.isAuthenticationEnable( ) )</span>
+        {
+<span class="nc" id="L195">            return SecurityService.getInstance( ).isUserInRole( request, strRole );</span>
+        }
+
+<span class="nc" id="L198">        return true;</span>
+    }
+
+    /**
+     * Return form
+     * 
+     * @param request
+     *            the page request
+     * @param strIdContactList
+     *            the id of contact list
+     * @param strSendMessage
+     *            the send message
+     * @return the corresponding form
+     * @throws SiteMessageException
+     *             occurs during treatment
+     */
+    @View( VIEW_CONTACT_PAGE )
+    public XPage getForm( HttpServletRequest request ) throws SiteMessageException
+    {
+<span class="nc" id="L217">        String strPortalUrl = request.getRequestURI( );</span>
+<span class="nc" id="L218">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+
+<span class="nc" id="L220">        model.put( MARK_PORTAL_URL, strPortalUrl );</span>
+
+<span class="nc" id="L222">        boolean bIsCaptchaEnabled = PluginService.isPluginEnable( JCAPTCHA_PLUGIN );</span>
+<span class="nc" id="L223">        model.put( MARK_IS_ACTIVE_CAPTCHA, bIsCaptchaEnabled );</span>
+
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        if ( bIsCaptchaEnabled )</span>
+        {
+<span class="nc" id="L227">            _captchaService = new CaptchaSecurityService( );</span>
+<span class="nc" id="L228">            model.put( MARK_CAPTCHA, _captchaService.getHtmlCode( ) );</span>
+        }
+
+<span class="nc" id="L231">        String strIdContactList = request.getParameter( PARAMETER_ID_CONTACT_LIST );</span>
+<span class="nc" id="L232">        String strSendMessage = request.getParameter( PARAMETER_SEND );</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        String strVisitorLastName = ( request.getParameter( PARAMETER_VISITOR_LASTNAME ) != null ) ? request.getParameter( PARAMETER_VISITOR_LASTNAME ) : &quot;&quot;;</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        String strVisitorFirstName = ( request.getParameter( PARAMETER_VISITOR_FIRSTNAME ) != null ) ? request.getParameter( PARAMETER_VISITOR_FIRSTNAME ) : &quot;&quot;;</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        String strVisitorEmail = ( request.getParameter( PARAMETER_VISITOR_EMAIL ) != null ) ? request.getParameter( PARAMETER_VISITOR_EMAIL ) : &quot;&quot;;</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">        String strVisitorAddress = ( request.getParameter( PARAMETER_VISITOR_ADDRESS ) != null ) ? request.getParameter( PARAMETER_VISITOR_ADDRESS ) : &quot;&quot;;</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        String strObject = ( request.getParameter( PARAMETER_MESSAGE_OBJECT ) != null ) ? request.getParameter( PARAMETER_MESSAGE_OBJECT ) : &quot;&quot;;</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        String strMessage = ( request.getParameter( PARAMETER_MESSAGE ) != null ) ? request.getParameter( PARAMETER_MESSAGE ) : &quot;&quot;;</span>
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        String strContact = ( request.getParameter( PARAMETER_CONTACT ) != null ) ? request.getParameter( PARAMETER_CONTACT ) : &quot;&quot;;</span>
+
+<span class="nc bnc" id="L241" title="All 2 branches missed.">        if ( strSendMessage != null )</span>
+        {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">            String strStyleLastName = strVisitorLastName.equals( &quot;&quot; ) ? &quot;error&quot; : &quot;&quot;;</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">            String strStyleFirstName = strVisitorFirstName.equals( &quot;&quot; ) ? &quot;error&quot; : &quot;&quot;;</span>
+<span class="nc bnc" id="L245" title="All 4 branches missed.">            String strStyleEmail = ( strVisitorEmail.equals( &quot;&quot; ) || ( StringUtil.checkEmail( strVisitorEmail ) != true ) ) ? &quot;error&quot; : &quot;&quot;;</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">            String strStyleObject = strObject.equals( &quot;&quot; ) ? &quot;error&quot; : &quot;&quot;;</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            String strStyleMessage = strMessage.equals( &quot;&quot; ) ? &quot;error&quot; : &quot;&quot;;</span>
+<span class="nc bnc" id="L248" title="All 2 branches missed.">            String strStyleContact = strContact.equals( &quot;0&quot; ) ? &quot;error&quot; : &quot;&quot;;</span>
+<span class="nc" id="L249">            String strAlertMsg = &quot;&quot;;</span>
+
+<span class="nc bnc" id="L251" title="All 2 branches missed.">            if ( strSendMessage.equals( &quot;done&quot; ) )</span>
+            {
+<span class="nc" id="L253">                UrlItem url = new UrlItem( strPortalUrl );</span>
+<span class="nc" id="L254">                url.addParameter( XPageAppService.PARAM_XPAGE_APP, ContactPlugin.PLUGIN_NAME );</span>
+<span class="nc" id="L255">                url.addParameter( MVCUtils.PARAMETER_VIEW, VIEW_CONTACT_PAGE );</span>
+<span class="nc" id="L256">                url.addParameter( PARAMETER_ID_CONTACT_LIST, strIdContactList );</span>
+<span class="nc" id="L257">                SiteMessageService.setMessage( request, PROPERTY_SENDING_OK, SiteMessage.TYPE_INFO, url.getUrl( ) );</span>
+<span class="nc" id="L258">            }</span>
+
+            else
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                if ( strSendMessage.equals( &quot;error_exception&quot; ) )</span>
+                {
+<span class="nc" id="L263">                    strAlertMsg = I18nService.getLocalizedString( PROPERTY_SENDING_NOK, request.getLocale( ) );</span>
+                }
+
+                else
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                    if ( strSendMessage.equals( &quot;error_captcha&quot; ) )</span>
+                    {
+<span class="nc" id="L269">                        strAlertMsg = I18nService.getLocalizedString( PROPERTY_CAPTCHA_ERROR, request.getLocale( ) );</span>
+                    }
+
+                    else
+<span class="nc bnc" id="L273" title="All 2 branches missed.">                        if ( strSendMessage.equals( &quot;error_tos&quot; ) )</span>
+                        {
+<span class="nc" id="L275">                            strAlertMsg = I18nService.getLocalizedString( PROPERTY_TOS_ERROR, request.getLocale( ) );</span>
+                        }
+
+                        else
+<span class="nc bnc" id="L279" title="All 2 branches missed.">                            if ( strSendMessage.equals( &quot;error_field&quot; ) )</span>
+                            {
+<span class="nc" id="L281">                                strAlertMsg = I18nService.getLocalizedString( PROPERTY_MANDATORY_FIELD_MISSING, request.getLocale( ) );</span>
+                            }
+
+                            else
+<span class="nc bnc" id="L285" title="All 2 branches missed.">                                if ( strSendMessage.equals( &quot;error_recipient&quot; ) )</span>
+                                {
+<span class="nc" id="L287">                                    strAlertMsg = I18nService.getLocalizedString( PROPERTY_RECIPIENT_MISSING, request.getLocale( ) );</span>
+                                }
+                                else
+<span class="nc bnc" id="L290" title="All 2 branches missed.">                                    if ( strSendMessage.equals( &quot;error_email&quot; ) )</span>
+                                    {
+<span class="nc" id="L292">                                        strAlertMsg = I18nService.getLocalizedString( PROPERTY_ERROR_EMAIL, request.getLocale( ) );</span>
+                                    }
+
+<span class="nc" id="L295">            model.put( MARK_CONTACT_ALERT_MSG, strAlertMsg );</span>
+<span class="nc" id="L296">            model.put( MARK_STYLE_LAST_NAME, strStyleLastName );</span>
+<span class="nc" id="L297">            model.put( MARK_STYLE_FIRST_NAME, strStyleFirstName );</span>
+<span class="nc" id="L298">            model.put( MARK_STYLE_OBJECT, strStyleObject );</span>
+<span class="nc" id="L299">            model.put( MARK_STYLE_EMAIL, strStyleEmail );</span>
+<span class="nc" id="L300">            model.put( MARK_STYLE_MESSAGE, strStyleMessage );</span>
+<span class="nc" id="L301">            model.put( MARK_STYLE_CONTACT, strStyleContact );</span>
+        }
+
+<span class="nc" id="L304">        int nIdContactList = Integer.parseInt( strIdContactList );</span>
+<span class="nc" id="L305">        ContactList contactList = ContactListHome.findByPrimaryKey( nIdContactList, _plugin );</span>
+
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if ( !ContactListHome.listExists( contactList.getId( ), _plugin ) )</span>
+        {
+<span class="nc" id="L309">            SiteMessageService.setMessage( request, PROPERTY_LIST_NOT_EXISTS, SiteMessage.TYPE_ERROR );</span>
+        }
+
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if ( !isVisible( request, contactList.getRole( ) ) )</span>
+        {
+<span class="nc" id="L314">            SiteMessageService.setMessage( request, PROPERTY_NOT_AUTHORIZED, SiteMessage.TYPE_STOP );</span>
+        }
+
+<span class="nc" id="L317">        String strComboItem = I18nService.getLocalizedString( PROPERTY_COMBO_CHOOSE, request.getLocale( ) );</span>
+
+        // Contacts Combo
+<span class="nc" id="L320">        ReferenceList listContact = ContactHome.getContactsByListWithString( contactList.getId( ), strComboItem, _plugin );</span>
+
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        if ( SecurityService.isAuthenticationEnable( ) )</span>
+        {
+<span class="nc" id="L324">            LuteceUser user = SecurityService.getInstance( ).getRegisteredUser( request );</span>
+
+<span class="nc bnc" id="L326" title="All 2 branches missed.">            if ( user != null )</span>
+            {
+<span class="nc" id="L328">                model.put( MARK_MYLUTECE_USER, user );</span>
+            }
+        }
+
+<span class="nc" id="L332">        model.put( MARK_CONTACTS_LIST, listContact );</span>
+<span class="nc" id="L333">        model.put( MARK_VISITOR_LASTNAME, strVisitorLastName );</span>
+<span class="nc" id="L334">        model.put( MARK_VISITOR_FIRSTNAME, strVisitorFirstName );</span>
+<span class="nc" id="L335">        model.put( MARK_VISITOR_EMAIL, strVisitorEmail );</span>
+<span class="nc" id="L336">        model.put( MARK_VISITOR_ADDRESS, strVisitorAddress );</span>
+<span class="nc" id="L337">        model.put( MARK_OBJECT, strObject );</span>
+<span class="nc" id="L338">        model.put( MARK_MESSAGE, strMessage );</span>
+<span class="nc" id="L339">        model.put( MARK_ID_CONTACT_LIST, nIdContactList );</span>
+
+<span class="nc" id="L341">        boolean bIsTosRequired = contactList.getTos( );</span>
+<span class="nc" id="L342">        model.put( MARK_IS_TOS_REQUIRED, bIsTosRequired );</span>
+
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        if ( bIsTosRequired )</span>
+        {
+<span class="nc" id="L346">            String strTosMessage = contactList.getTosMessage( );</span>
+<span class="nc" id="L347">            model.put( MARK_TOS_MESSAGE, strTosMessage );</span>
+
+<span class="nc bnc" id="L349" title="All 2 branches missed.">            boolean bTosAccepted = request.getParameter( PARAMETER_TOS_ACCEPTED ) != null;</span>
+<span class="nc" id="L350">            model.put( MARK_TOS_ACCEPTED, bTosAccepted );</span>
+        }
+
+<span class="nc bnc" id="L353" title="All 4 branches missed.">        model.put( MARK_DEFAULT_CONTACT, ( ( strContact == null ) || ( strContact.equals( &quot;&quot; ) ) ) ? &quot;0&quot; : strContact );</span>
+
+<span class="nc" id="L355">        return getXPage( TEMPLATE_XPAGE_CONTACT, request.getLocale( ), model );</span>
+    }
+
+    /**
+     * Get lists
+     * 
+     * @param request
+     *            the page request
+     * @return the lists
+     * @throws SiteMessageException
+     *             occurs during treatment
+     */
+    @View( value = VIEW_CONTACT_LISTS, defaultView = true )
+    public XPage getLists( HttpServletRequest request ) throws SiteMessageException
+    {
+<span class="nc" id="L370">        Map&lt;String, Object&gt; model = new HashMap&lt;String, Object&gt;( );</span>
+<span class="nc" id="L371">        Collection&lt;ContactList&gt; listOfLists = ContactListHome.findAll( _plugin );</span>
+
+<span class="nc" id="L373">        Collection&lt;ContactList&gt; visibleList = new ArrayList&lt;ContactList&gt;( ); // filter the list of lists by role</span>
+
+<span class="nc bnc" id="L375" title="All 2 branches missed.">        for ( ContactList currentList : listOfLists )</span>
+        {
+<span class="nc bnc" id="L377" title="All 2 branches missed.">            if ( isVisible( request, currentList.getRole( ) ) )</span>
+            {
+<span class="nc" id="L379">                visibleList.add( currentList );</span>
+            }
+<span class="nc" id="L381">        }</span>
+
+<span class="nc bnc" id="L383" title="All 2 branches missed.">        if ( visibleList.size( ) == 0 )</span>
+        {
+<span class="nc" id="L385">            SiteMessageService.setMessage( request, PROPERTY_NO_LIST_VISIBLE, SiteMessage.TYPE_WARNING );</span>
+        }
+        else
+<span class="nc bnc" id="L388" title="All 2 branches missed.">            if ( visibleList.size( ) == 1 )</span>
+            {
+<span class="nc" id="L390">                String strContactListId = StringUtils.EMPTY;</span>
+
+<span class="nc bnc" id="L392" title="All 2 branches missed.">                for ( ContactList onlyList : visibleList )</span>
+                {
+<span class="nc" id="L394">                    strContactListId = Integer.toString( onlyList.getId( ) );</span>
+<span class="nc" id="L395">                }</span>
+
+<span class="nc" id="L397">                Map&lt;String, String&gt; mapParameters = new HashMap&lt;String, String&gt;( );</span>
+<span class="nc" id="L398">                mapParameters.put( PARAMETER_ID_CONTACT_LIST, strContactListId );</span>
+
+<span class="nc" id="L400">                return redirect( request, VIEW_CONTACT_PAGE, mapParameters );</span>
+            }
+
+<span class="nc" id="L403">        model.put( MARK_LIST_OF_LISTS, visibleList );</span>
+
+<span class="nc" id="L405">        return getXPage( TEMPLATE_XPAGE_LISTS, request.getLocale( ), model );</span>
+    }
+
+    /**
+     * This method tests the parameters stored in the request and send the message if they are corrects. Otherwise, it displays an error message.
+     * 
+     * @return The result of the process of the sending message.
+     * @param request
+     *            The http request
+     * @throws fr.paris.lutece.portal.service.message.SiteMessageException
+     *             Message displayed if an exception occures
+     */
+    @Action( ACTION_SEND_MESSAGE )
+    public XPage doSendMessage( HttpServletRequest request ) throws SiteMessageException
+    {
+<span class="nc" id="L420">        String strIdContactList = request.getParameter( PARAMETER_ID_CONTACT_LIST );</span>
+<span class="nc bnc" id="L421" title="All 2 branches missed.">        String strVisitorLastName = ( request.getParameter( PARAMETER_VISITOR_LASTNAME ) == null ) ? &quot;&quot; : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_LASTNAME ));</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">        String strVisitorFirstName = ( request.getParameter( PARAMETER_VISITOR_FIRSTNAME ) == null ) ? &quot;&quot; : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_FIRSTNAME ));</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        String strVisitorAddress = ( request.getParameter( PARAMETER_VISITOR_ADDRESS ) == null ) ? &quot;&quot; : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_ADDRESS ));</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        String strVisitorEmail = ( request.getParameter( PARAMETER_VISITOR_EMAIL ) == null ) ? &quot;&quot; : this.encodingWithUTF16(request.getParameter( PARAMETER_VISITOR_EMAIL ));</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">        String strObject = ( request.getParameter( PARAMETER_MESSAGE_OBJECT ) == null ) ? &quot;&quot; : this.encodingWithUTF16(request.getParameter( PARAMETER_MESSAGE_OBJECT ));</span>
+<span class="nc bnc" id="L426" title="All 2 branches missed.">        String strMessage = ( request.getParameter( PARAMETER_MESSAGE ) == null ) ? &quot;&quot; : this.encodingWithUTF16(request.getParameter( PARAMETER_MESSAGE ));</span>
+<span class="nc" id="L427">        String strDateOfDay = DateUtil.getCurrentDateString( request.getLocale( ) );</span>
+<span class="nc" id="L428">        String strContact = this.encodingWithUTF16(request.getParameter( PARAMETER_CONTACT ));</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">        int nContact = ( strContact == null ) ? 0 : Integer.parseInt( strContact );</span>
+<span class="nc" id="L430">        int nIdContactList = Integer.parseInt( strIdContactList );</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">        boolean bTosAccepted = request.getParameter( PARAMETER_TOS_ACCEPTED ) != null;</span>
+
+<span class="nc" id="L433">        Map&lt;String, String&gt; mapParamError = new HashMap&lt;String, String&gt;( );</span>
+<span class="nc" id="L434">        mapParamError.put( PARAMETER_ID_CONTACT_LIST, strIdContactList );</span>
+<span class="nc" id="L435">        mapParamError.put( PARAMETER_VISITOR_LASTNAME, strVisitorLastName );</span>
+<span class="nc" id="L436">        mapParamError.put( PARAMETER_VISITOR_FIRSTNAME, strVisitorFirstName );</span>
+<span class="nc" id="L437">        mapParamError.put( PARAMETER_VISITOR_ADDRESS, strVisitorAddress );</span>
+<span class="nc" id="L438">        mapParamError.put( PARAMETER_VISITOR_EMAIL, strVisitorEmail );</span>
+<span class="nc" id="L439">        mapParamError.put( PARAMETER_CONTACT, strContact );</span>
+<span class="nc" id="L440">        mapParamError.put( PARAMETER_MESSAGE_OBJECT, strObject );</span>
+<span class="nc" id="L441">        mapParamError.put( PARAMETER_MESSAGE, strMessage );</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">        if ( bTosAccepted )</span>
+        {
+<span class="nc" id="L444">            mapParamError.put( PARAMETER_TOS_ACCEPTED, &quot;1&quot; );</span>
+        }
+
+        // test the captcha
+<span class="nc bnc" id="L448" title="All 2 branches missed.">        if ( PluginService.isPluginEnable( JCAPTCHA_PLUGIN ) )</span>
+        {
+<span class="nc" id="L450">            _captchaService = new CaptchaSecurityService( );</span>
+
+<span class="nc bnc" id="L452" title="All 2 branches missed.">            if ( !_captchaService.validate( request ) )</span>
+            {
+<span class="nc" id="L454">                mapParamError.put( PARAMETER_SEND, &quot;error_captcha&quot; );</span>
+
+<span class="nc" id="L456">                return redirect( request, VIEW_CONTACT_PAGE, mapParamError );</span>
+            }
+        }
+
+        // test the selection of the contact
+<span class="nc bnc" id="L461" title="All 2 branches missed.">        if ( nContact == 0 )</span>
+        {
+<span class="nc" id="L463">            mapParamError.put( PARAMETER_SEND, &quot;error_recipient&quot; );</span>
+
+<span class="nc" id="L465">            return redirect( request, VIEW_CONTACT_PAGE, mapParamError );</span>
+        }
+
+<span class="nc" id="L468">        Contact contact = ContactHome.findByPrimaryKey( nContact, _plugin );</span>
+<span class="nc" id="L469">        String strEmailContact = contact.getEmail( );</span>
+<span class="nc" id="L470">        String strContactName = contact.getName( );</span>
+
+        // tests the length of the message ( 1000 characters maximums )
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        if ( strMessage.length( ) &gt; 1000 )</span>
+        {
+<span class="nc" id="L475">            strMessage = strMessage.substring( 0, 1000 );</span>
+        }
+
+        // Mandatory fields
+<span class="nc bnc" id="L479" title="All 8 branches missed.">        if ( strVisitorLastName.equals( &quot;&quot; ) || strVisitorFirstName.equals( &quot;&quot; ) || strVisitorEmail.equals( &quot;&quot; ) || strContact.equals( &quot;&quot; )</span>
+<span class="nc bnc" id="L480" title="All 4 branches missed.">                || strObject.equals( &quot;&quot; ) || strMessage.equals( &quot;&quot; ) )</span>
+        {
+<span class="nc" id="L482">            mapParamError.put( PARAMETER_SEND, &quot;error_field&quot; );</span>
+
+<span class="nc" id="L484">            return redirect( request, VIEW_CONTACT_PAGE, mapParamError );</span>
+        }
+
+        // test the email of the visitor
+        // Checking of the presence of the email address and of its format (@ caracter in the address).
+<span class="nc bnc" id="L489" title="All 2 branches missed.">        if ( StringUtil.checkEmail( strVisitorEmail ) != true )</span>
+        {
+<span class="nc" id="L491">            mapParamError.put( PARAMETER_SEND, &quot;error_email&quot; );</span>
+
+<span class="nc" id="L493">            return redirect( request, VIEW_CONTACT_PAGE, mapParamError );</span>
+        }
+
+<span class="nc" id="L496">        ContactList contactlist = ContactListHome.findByPrimaryKey( nIdContactList, _plugin );</span>
+<span class="nc" id="L497">        boolean bIsTosRequired = contactlist.getTos( );</span>
+
+        // test the checking of the terms of service
+<span class="nc bnc" id="L500" title="All 2 branches missed.">        if ( bIsTosRequired )</span>
+        {
+<span class="nc bnc" id="L502" title="All 2 branches missed.">            if ( !bTosAccepted )</span>
+            {
+<span class="nc" id="L504">                mapParamError.put( PARAMETER_SEND, &quot;error_tos&quot; );</span>
+
+<span class="nc" id="L506">                return redirect( request, VIEW_CONTACT_PAGE, mapParamError );</span>
+            }
+        }
+
+<span class="nc" id="L510">        Map&lt;String, String&gt; model = new HashMap&lt;String, String&gt;( );</span>
+<span class="nc" id="L511">        model.put( MARK_VISITOR_LASTNAME, strVisitorLastName );</span>
+<span class="nc" id="L512">        model.put( MARK_VISITOR_FIRSTNAME, strVisitorFirstName );</span>
+<span class="nc" id="L513">        model.put( MARK_VISITOR_ADDRESS, strVisitorAddress );</span>
+<span class="nc" id="L514">        model.put( MARK_VISITOR_EMAIL, strVisitorEmail );</span>
+<span class="nc" id="L515">        model.put( MARK_CONTACT_NAME, strContactName );</span>
+<span class="nc" id="L516">        model.put( MARK_MESSAGE, strMessage );</span>
+<span class="nc" id="L517">        model.put( MARK_CURRENT_DATE, strDateOfDay );</span>
+
+<span class="nc" id="L519">        HtmlTemplate template = AppTemplateService.getTemplate( TEMPLATE_MESSAGE_CONTACT, request.getLocale( ), model );</span>
+
+<span class="nc" id="L521">        String strMessageText = template.getHtml( );</span>
+
+<span class="nc" id="L523">        String strNoReplyEmail = MailService.getNoReplyEmail();</span>
+
+<span class="nc" id="L525">        MailService.sendMailHtml(strEmailContact, strVisitorLastName, strNoReplyEmail, strObject, strMessageText );</span>
+<span class="nc" id="L526">        ContactHome.updateHits( nContact, nIdContactList, _plugin );</span>
+
+<span class="nc" id="L528">        Map&lt;String, String&gt; mapParamSuccess = new HashMap&lt;String, String&gt;( );</span>
+<span class="nc" id="L529">        mapParamSuccess.put( PARAMETER_ID_CONTACT_LIST, strIdContactList );</span>
+<span class="nc" id="L530">        mapParamSuccess.put( PARAMETER_SEND, &quot;done&quot; );</span>
+
+<span class="nc" id="L532">        return redirect( request, VIEW_CONTACT_PAGE, mapParamSuccess );</span>
+    }
+
+    /**
+     * This method allows to encode a String to UTF-8 in Java.
+     *
+     * @return The string encode.
+     * @param rawString The raw string
+     */
+    private String encodingWithUTF16(String rawString){
+<span class="nc" id="L542">        byte[] bytes = rawString.getBytes(StandardCharsets.UTF_16);</span>
+<span class="nc" id="L543">        return new String(bytes, StandardCharsets.UTF_16);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.4.201905082037</span></div></body></html>
