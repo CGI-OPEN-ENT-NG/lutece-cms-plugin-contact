@@ -1,7 +1,0 @@
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/AllTests.java
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/business/AllTests.java
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/business/ContactListBusinessTest.java
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/business/ContactBusinessTest.java
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/web/AllTests.java
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/web/ContactJspBeanTest.java
-/home/dev/DEV/workspace/plugin-lutece/CGI/lutece-cms-plugin-contact/src/test/java/fr/paris/lutece/plugins/contact/web/ContactListJspBeanTest.java
