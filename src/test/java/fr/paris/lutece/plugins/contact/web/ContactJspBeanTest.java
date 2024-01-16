@@ -34,7 +34,7 @@
 package fr.paris.lutece.plugins.contact.web;
 
 import fr.paris.lutece.plugins.contact.web.ContactJspBean;
-import fr.paris.lutece.portal.business.rbac.AdminRole;
+import fr.paris.lutece.portal.business.rbac.RBACRole;
 import fr.paris.lutece.portal.business.user.AdminUser;
 import fr.paris.lutece.portal.business.user.AdminUserHome;
 import fr.paris.lutece.portal.service.admin.AccessDeniedException;
@@ -70,7 +70,7 @@ public class ContactJspBeanTest extends LuteceTestCase
 
         MockHttpServletRequest request = new MockHttpServletRequest( );
         AdminUser user = new AdminUser( );
-        user.setRoles( new HashMap<String, AdminRole>( ) );
+        user.setRoles( new HashMap<String, RBACRole>( ) );
         user.setLocale( Locale.getDefault( ) );
         Utils.registerAdminUserWithRigth( request, user, ContactJspBean.RIGHT_MANAGE_CONTACT );
 
@@ -89,7 +89,7 @@ public class ContactJspBeanTest extends LuteceTestCase
 
         MockHttpServletRequest request = new MockHttpServletRequest( );
         AdminUser user = new AdminUser( );
-        user.setRoles( new HashMap<String, AdminRole>( ) );
+        user.setRoles( new HashMap<String, RBACRole>( ) );
         user.setLocale( Locale.getDefault( ) );
         Utils.registerAdminUserWithRigth( request, user, ContactJspBean.RIGHT_MANAGE_CONTACT );
         request.addParameter( MVCUtils.PARAMETER_ACTION, ACTION_CREATE_CONTACT );
@@ -113,7 +113,7 @@ public class ContactJspBeanTest extends LuteceTestCase
 
         MockHttpServletRequest request = new MockHttpServletRequest( );
         AdminUser user = new AdminUser( );
-        user.setRoles( new HashMap<String, AdminRole>( ) );
+        user.setRoles( new HashMap<String, RBACRole>( ) );
         user.setLocale( Locale.getDefault( ) );
         Utils.registerAdminUserWithRigth( request, user, ContactJspBean.RIGHT_MANAGE_CONTACT );
         request.addParameter( PARAMETER_CONTACT_ID, "1" );
@@ -133,7 +133,7 @@ public class ContactJspBeanTest extends LuteceTestCase
 
         MockHttpServletRequest request = new MockHttpServletRequest( );
         AdminUser user = new AdminUser( );
-        user.setRoles( new HashMap<String, AdminRole>( ) );
+        user.setRoles( new HashMap<String, RBACRole>( ) );
         user.setLocale( Locale.getDefault( ) );
         Utils.registerAdminUserWithRigth( request, user, ContactJspBean.RIGHT_MANAGE_CONTACT );
         request.addParameter( MVCUtils.PARAMETER_VIEW, VIEW_CONFIRM_REMOVE_CONTACT );
@@ -191,7 +191,7 @@ public class ContactJspBeanTest extends LuteceTestCase
 
         MockHttpServletRequest request = new MockHttpServletRequest( );
         AdminUser user = new AdminUser( );
-        user.setRoles( new HashMap<String, AdminRole>( ) );
+        user.setRoles( new HashMap<String, RBACRole>( ) );
         user.setLocale( Locale.getDefault( ) );
         Utils.registerAdminUserWithRigth( request, user, ContactJspBean.RIGHT_MANAGE_CONTACT );
         request.addParameter( MVCUtils.PARAMETER_ACTION, ACTION_MODIFY_CONTACT );
